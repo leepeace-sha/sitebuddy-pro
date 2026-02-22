@@ -1,17 +1,15 @@
-Site Buddy (PWA) — Offline Audit MVP
+Site Buddy — PWA (Offline)
 
-Files:
-- index.html
-- sw.js
-- manifest.webmanifest
-- icon-192.png
-- icon-512.png
+This build is a SINGLE-FILE app (no sitebuddy.js), so you can upload it easily.
 
-IMPORTANT (Android camera):
-- Live camera preview (getUserMedia) requires HTTPS.
-- Use “Quick Capture” (system camera) if you are not on HTTPS.
+Includes:
+- Issue numbering: SB-001, SB-002...
+- Numbered pins + label prompts
+- Auto Pin Legend in PDF under each photo
+- Company logo upload stored offline + inserted into PDF header
+- Offline IndexedDB storage
+- Android-hardened camera (live preview requires HTTPS) + Quick Capture upload
 
-Run locally (on your computer):
-  python3 -m http.server 8080
-
-For camera preview on Android, deploy to HTTPS (Netlify/GitHub Pages/etc.) or use an HTTPS local tunnel.
+Deploy:
+- Upload files to GitHub repo root
+- Settings → Pages → main /(root)
