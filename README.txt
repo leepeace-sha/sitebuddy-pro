@@ -1,15 +1,9 @@
-Site Buddy — PWA (Offline)
+Site Buddy — PWA (Offline) — Fixed v2
 
-This build is a SINGLE-FILE app (no sitebuddy.js), so you can upload it easily.
-
-Includes:
-- Issue numbering: SB-001, SB-002...
-- Numbered pins + label prompts
-- Auto Pin Legend in PDF under each photo
-- Company logo upload stored offline + inserted into PDF header
-- Offline IndexedDB storage
-- Android-hardened camera (live preview requires HTTPS) + Quick Capture upload
+Fixes:
+- Signature now draws smoothly (free-flow handwriting) on touch + mouse (no more dots)
+- Site Buddy icon centered in the square app icon
 
 Deploy:
-- Upload files to GitHub repo root
-- Settings → Pages → main /(root)
+- Upload all files in this folder to GitHub repo root
+- Settings → Pages → Deploy from branch → main /(root)

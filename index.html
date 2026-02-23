@@ -1,0 +1,1726 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="theme-color" content="#b00020"/>
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>Site Buddy</title>
+
+  <style>
+    :root{
+      --bg:#ffffff;
+      --text:#0b1220;
+      --muted:#667085;
+      --border:#b00020;
+      --shadow: 0 14px 40px rgba(16,24,40,.10);
+      --radius: 18px;
+      --focus: rgba(176,0,32,.20);
+      --chip:#f8fafc;
+      --ok:#0f766e;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1200px 700px at 15% -10%, rgba(176,0,32,.10), transparent 60%),
+        radial-gradient(900px 600px at 110% 20%, rgba(16,24,40,.08), transparent 55%),
+        var(--bg);
+      color: var(--text);
+    }
+    header{
+      position: sticky; top:0; z-index:10;
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.80));
+      backdrop-filter: blur(12px);
+      border-bottom: 3px solid var(--border);
+      box-shadow: 0 10px 30px rgba(16,24,40,.08);
+    }
+    .wrap{max-width: 1180px; margin: 0 auto; padding: 14px 16px;}
+    .top{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+    .brand{display:flex; align-items:center; gap:12px; min-width: 260px;}
+    .mark{
+      width:46px; height:46px; border-radius:16px;
+      border:2px solid rgba(176,0,32,.55);
+      display:grid; place-items:center;
+      background:#fff;
+      overflow:hidden;
+      box-shadow: 0 8px 22px rgba(176,0,32,.14);
+    }
+    .mark img{width:100%; height:100%; object-fit:cover}
+    .brand h1{margin:0; font-size:16px; letter-spacing:.2px}
+    .brand p{margin:2px 0 0; font-size:12px; color:var(--muted)}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+
+    button{
+      border:1px solid rgba(16,24,40,.12);
+      background:#fff;
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-weight: 900;
+      box-shadow: 0 1px 0 rgba(0,0,0,.02);
+    }
+    button.primary{
+      background: linear-gradient(180deg, #c40028, #b00020);
+      color:#fff;
+      border-color: rgba(176,0,32,.55);
+    }
+    button.secondary{
+      background: linear-gradient(180deg, #1b2333, #101828);
+      color:#fff;
+      border-color: rgba(16,24,40,.22);
+    }
+    button.ghost{
+      background:#fff;
+      border-color: rgba(176,0,32,.30);
+      color: var(--border);
+    }
+    button.danger{
+      background:#fff;
+      border-color: rgba(176,0,32,.45);
+      color: var(--border);
+    }
+    button:disabled{opacity:.45; cursor:not-allowed}
+
+    main .grid{
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      gap:14px;
+      padding: 16px 0 28px;
+    }
+    @media (max-width: 980px){ main .grid{grid-template-columns: 1fr} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.86));
+      border: 2px solid rgba(176,0,32,.14);
+      border-left: 6px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .card h2{
+      margin:0 0 10px;
+      font-size: 14px;
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      letter-spacing:.2px;
+    }
+
+    .sub{margin:6px 0 0; font-size:12px; color:var(--muted)}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    input, textarea, select{
+      width:100%;
+      border: 1px solid rgba(16,24,40,.14);
+      border-radius: 14px;
+      padding: 10px 10px;
+      background:#fff;
+      color: var(--text);
+      outline:none;
+    }
+    input:focus, textarea:focus, select:focus{
+      box-shadow: 0 0 0 4px var(--focus);
+      border-color: rgba(176,0,32,.35);
+    }
+    textarea{min-height: 90px; resize: vertical}
+    .row{display:flex; gap:10px}
+    .row>*{flex:1}
+
+    .list{
+      display:flex; flex-direction:column; gap:8px;
+      max-height: 540px; overflow:auto; padding-right: 4px;
+    }
+    .item{
+      border:1px solid rgba(16,24,40,.12);
+      border-left: 5px solid transparent;
+      border-radius: 16px;
+      padding: 10px;
+      cursor:pointer;
+      background:#fff;
+      transition: transform .06s ease, border-color .12s ease, box-shadow .12s ease;
+    }
+    .item:hover{transform: translateY(-1px); box-shadow: 0 12px 30px rgba(16,24,40,.10)}
+    .item.active{
+      border-color: rgba(176,0,32,.30);
+      border-left-color: var(--border);
+      background: rgba(176,0,32,.03);
+    }
+    .item .title{font-weight:950; font-size:13px}
+    .meta{margin-top:6px; display:flex; gap:8px; flex-wrap:wrap; font-size:12px; color:var(--muted)}
+    .pill{
+      border:1px solid rgba(16,24,40,.12);
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: var(--chip);
+      white-space:nowrap;
+    }
+    .pill.open{border-color: rgba(176,0,32,.30); color: var(--border)}
+    .pill.closed{border-color: rgba(15,118,110,.28); color: var(--ok)}
+    .pill.high{border-color: rgba(176,0,32,.45); color: var(--border)}
+    .pill.overdue{border-color: rgba(176,0,32,.55); color: var(--border); font-weight:950}
+
+    .split{display:grid; grid-template-columns: 1fr 430px; gap:14px; align-items:start;}
+    @media (max-width: 980px){ .split{grid-template-columns:1fr} }
+
+    .hr{height:1px; background: rgba(16,24,40,.10); margin:12px 0;}
+    .tiny{font-size:11px; color:var(--muted)}
+
+    .photoGrid{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px;}
+    @media (max-width: 560px){ .photoGrid{grid-template-columns:1fr} }
+    .photoCard{
+      border:1px solid rgba(16,24,40,.12);
+      border-radius: 16px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: 0 10px 24px rgba(16,24,40,.08);
+    }
+    .photoCard img{width:100%; height:175px; object-fit:cover; display:block;}
+    .photoCap{padding: 8px 10px; display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--muted); font-size:12px;}
+
+    .modalBackdrop{
+      position: fixed; inset:0;
+      background: rgba(16,24,40,.45);
+      display:none;
+      align-items:center; justify-content:center;
+      padding: 16px;
+      z-index: 50;
+    }
+    .modalBackdrop.show{display:flex}
+    .modal{
+      width:min(1020px, 100%);
+      background:#fff;
+      border-radius: 20px;
+      box-shadow: 0 18px 70px rgba(0,0,0,.35);
+      overflow:hidden;
+      border: 2px solid rgba(176,0,32,.22);
+    }
+    .modalHead{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding: 12px 14px;
+      border-bottom: 2px solid rgba(16,24,40,.08);
+      background: linear-gradient(180deg, rgba(176,0,32,.06), rgba(255,255,255,.92));
+    }
+    .modalHead h3{margin:0; font-size:14px; letter-spacing:.2px}
+    .modalBody{padding: 12px 14px;}
+    .toolbar{
+      display:flex; gap:8px; flex-wrap:wrap;
+      align-items:center;
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding: 8px;
+      background: rgba(176,0,32,.03);
+    }
+    .toolBtn{padding:8px 10px; border-radius: 14px; font-weight:950}
+    .toolBtn.active{box-shadow: 0 0 0 4px var(--focus); border-color: rgba(176,0,32,.35)}
+    canvas{max-width:100%; background:#fff; border-radius: 16px; border:1px solid rgba(16,24,40,.12); touch-action:none}
+    video{max-width:100%; border-radius: 16px; border:1px solid rgba(16,24,40,.12); background:#000}
+
+    .toast{
+      position: fixed; left:50%; bottom:16px;
+      transform: translateX(-50%);
+      background: #101828;
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      box-shadow: 0 14px 45px rgba(0,0,0,.25);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .15s ease;
+      z-index: 100;
+    }
+    .toast.show{opacity:1}
+
+    .brandBox{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      border:1px dashed rgba(176,0,32,.35);
+      border-radius: 16px;
+      padding:10px;
+      background: rgba(176,0,32,.02);
+    }
+    .brandPreview{
+      width:100px; height:46px;
+      border-radius: 14px;
+      border:1px solid rgba(16,24,40,.10);
+      background:#fff;
+      display:grid; place-items:center;
+      overflow:hidden;
+    }
+    .brandPreview img{width:100%; height:100%; object-fit:contain}
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="wrap top">
+    <div class="brand">
+      <div class="mark"><img src="app-icon.png" alt="Site Buddy"/></div>
+      <div>
+        <h1>Site Buddy</h1>
+        <p>Offline audits • Photos • Pins • Reports • PWA</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="btnNewProject">+ New Project</button>
+      <button class="secondary" id="btnNewIssue" disabled>+ New Issue</button>
+      <button class="primary" id="btnExport" disabled>Export PDF</button>
+      <button class="secondary" id="btnShare" disabled>Share PDF</button>
+      <button class="ghost" id="btnInstall" style="display:none;">Install</button>
+      <button class="danger" id="btnReset">Reset</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+    <section class="card">
+      <h2>Projects <span class="tiny">Select a project</span></h2>
+      <div id="projectList" class="list"></div>
+      <div class="hr"></div>
+
+      <h2>Project Details</h2>
+      <label>Title</label>
+      <input id="pTitle" placeholder="e.g., Riverside Apartments – Block B"/>
+
+      <div class="row">
+        <div>
+          <label>Reference</label>
+          <input id="pRef" placeholder="e.g., RB-2026-014"/>
+        </div>
+        <div>
+          <label>Client</label>
+          <input id="pClient" placeholder="e.g., Acme Property"/>
+        </div>
+      </div>
+
+      <label>Notes</label>
+      <textarea id="pNotes" placeholder="Optional site notes…"></textarea>
+
+      <div class="hr"></div>
+      <h2>Branding</h2>
+      <div class="brandBox">
+        <div class="brandPreview" title="Company logo used in PDF header">
+          <img id="companyLogoPreview" src="logo.png" alt="Company logo"/>
+        </div>
+        <div style="flex:1; min-width: 180px;">
+          <div class="tiny" style="margin-bottom:6px;">Upload your company logo (saved offline on this device)</div>
+          <input id="companyLogoInput" type="file" accept="image/*"/>
+          <div style="display:flex; gap:10px; margin-top:8px;">
+            <button class="ghost" id="btnClearCompanyLogo" type="button">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <div class="row">
+        <button class="primary" id="btnSaveProject" disabled>Save</button>
+        <button class="danger" id="btnDeleteProject" disabled>Delete</button>
+      </div>
+
+      <p class="sub">Stored offline on this device (IndexedDB). No internet needed.</p>
+    </section>
+
+    <section class="card">
+      <h2>Issues <span class="tiny">Per project</span></h2>
+
+      <div class="split">
+        <div>
+          <div class="row">
+            <div>
+              <label>Filter</label>
+              <select id="issueFilter">
+                <option value="all">All</option>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+              </select>
+            </div>
+            <div>
+              <label>Search</label>
+              <input id="issueSearch" placeholder="Title / location / notes / assignee…"/>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+          <div id="issueList" class="list" style="max-height: 380px;"></div>
+        </div>
+
+        <div>
+          <h2 style="margin-bottom:6px;">Issue Details</h2>
+          <p class="sub" id="issueHint">Select a project, then create an issue.</p>
+
+          <div id="issueForm" style="display:none;">
+            <label>Issue ID</label>
+            <input id="iCode" disabled />
+
+            <label>Title</label>
+            <input id="iTitle" placeholder="e.g., Missing handrail at stairwell"/>
+
+            <div class="row">
+              <div>
+                <label>Status</label>
+                <select id="iStatus">
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              <div>
+                <label>Severity</label>
+                <select id="iSeverity">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Assignee</label>
+                <input id="iAssignee" placeholder="e.g., John / Subcontractor / Team"/>
+              </div>
+              <div>
+                <label>Due date</label>
+                <input id="iDueDate" type="date"/>
+              </div>
+            </div>
+
+            <label>Location / Area</label>
+            <input id="iLocation" placeholder="e.g., Level 2 – Corridor C"/>
+
+            <label>Notes</label>
+            <textarea id="iNotes" placeholder="Describe the issue, action required, etc."></textarea>
+
+            <div class="row">
+              <button class="secondary" id="btnCamera" type="button">Open Camera</button>
+              <button class="ghost" id="btnQuickCapture" type="button">Quick Capture</button>
+              <label style="margin:0; flex:1;">
+                <span class="tiny">Or upload:</span>
+                <input id="iPhotoInput" type="file" accept="image/*" multiple capture="environment" style="margin-top:6px;"/>
+              </label>
+            </div>
+
+            <div style="height:10px"></div>
+            <div id="photoGrid" class="photoGrid"></div>
+
+            <div class="row" style="margin-top:10px;">
+              <button class="primary" id="btnSaveIssue" type="button">Save Issue</button>
+              <button class="danger" id="btnDeleteIssue" type="button">Delete</button>
+            </div>
+
+            <div class="hr"></div>
+            <h2 style="margin-bottom:6px;">Report Signature</h2>
+            <p class="tiny">Draw a signature to include in the PDF report.</p>
+            <canvas id="sigCanvas" width="700" height="220"></canvas>
+            <div class="row" style="margin-top:8px;">
+              <button class="ghost" id="btnSigClear" type="button">Clear signature</button>
+              <button class="ghost" id="btnSigSave" type="button">Save signature</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+      <p class="tiny">Pins: open a photo → Annotate → choose Pin tool → tap to place 1,2,3… and label → PDF auto legend.</p>
+    </section>
+  </div>
+</main>
+
+<!-- Annotation Modal -->
+<div class="modalBackdrop" id="annoBackdrop">
+  <div class="modal">
+    <div class="modalHead">
+      <h3 id="annoTitle">Annotate Photo</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="ghost" id="btnAnnoUndo" type="button">Undo</button>
+        <button class="ghost" id="btnAnnoClear" type="button">Clear</button>
+        <button class="primary" id="btnAnnoSave" type="button">Save</button>
+        <button class="danger" id="btnAnnoClose" type="button">Close</button>
+      </div>
+    </div>
+    <div class="modalBody">
+      <div class="toolbar" style="margin-bottom:10px;">
+        <button class="toolBtn ghost active" data-tool="rect" type="button">Rectangle</button>
+        <button class="toolBtn ghost" data-tool="arrow" type="button">Arrow</button>
+        <button class="toolBtn ghost" data-tool="pin" type="button">Pin</button>
+        <button class="toolBtn ghost" data-tool="text" type="button">Text</button>
+        <span class="tiny" style="margin-left:auto;">Drag to draw • tap to place pin/text</span>
+      </div>
+
+      <canvas id="annoCanvas" width="1200" height="800"></canvas>
+      <div class="tiny" id="pinHint" style="margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Camera Modal -->
+<div class="modalBackdrop" id="camBackdrop">
+  <div class="modal">
+    <div class="modalHead">
+      <h3>Camera</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="primary" id="btnSnap" type="button">Snap Photo</button>
+        <button class="ghost" id="btnCamSwitch" type="button">Switch camera</button>
+        <button class="danger" id="btnCamClose" type="button">Close</button>
+      </div>
+    </div>
+    <div class="modalBody">
+      <video id="camVideo" autoplay playsinline></video>
+      <canvas id="camCanvas" width="1280" height="720" style="display:none;"></canvas>
+      <p class="tiny">Android: Live preview needs HTTPS. Quick Capture always works.</p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+/* ===================== IndexedDB ===================== */
+const DB_NAME = "sitebuddy_db_v5";
+const DB_VER  = 1;
+
+function openDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if(!db.objectStoreNames.contains("projects")){
+        db.createObjectStore("projects", { keyPath:"id" });
+      }
+      if(!db.objectStoreNames.contains("photos")){
+        const s = db.createObjectStore("photos", { keyPath:"id" });
+        s.createIndex("by_issueId", "issueId", { unique:false });
+      }
+      if(!db.objectStoreNames.contains("signatures")){
+        db.createObjectStore("signatures", { keyPath:"projectId" });
+      }
+      if(!db.objectStoreNames.contains("branding")){
+        db.createObjectStore("branding", { keyPath:"key" }); // {key:"companyLogo", dataUrl}
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbPut(storeName, value){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(storeName, "readwrite");
+    t.oncomplete = () => resolve(true);
+    t.onerror = () => reject(t.error);
+    t.objectStore(storeName).put(value);
+  });
+}
+async function dbGet(storeName, key){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(storeName, "readonly");
+    const req = t.objectStore(storeName).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbDelete(storeName, key){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(storeName, "readwrite");
+    t.oncomplete = () => resolve(true);
+    t.onerror = () => reject(t.error);
+    t.objectStore(storeName).delete(key);
+  });
+}
+async function dbGetAllProjects(){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction("projects", "readonly");
+    const req = t.objectStore("projects").getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbGetPhotosByIssueId(issueId){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction("photos", "readonly");
+    const idx = t.objectStore("photos").index("by_issueId");
+    const req = idx.getAll(issueId);
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function dbDeletePhotosByIssueId(issueId){
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction("photos", "readwrite");
+    const store = t.objectStore("photos");
+    const idx = store.index("by_issueId");
+    const req = idx.openCursor(issueId);
+    req.onsuccess = (e) => {
+      const cursor = e.target.result;
+      if(cursor){ store.delete(cursor.primaryKey); cursor.continue(); }
+    };
+    t.oncomplete = () => resolve(true);
+    t.onerror = () => reject(t.error);
+  });
+}
+
+/* ===================== Helpers ===================== */
+const $ = (id) => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2,10) + "-" + Date.now().toString(36);
+
+const toastEl = $("toast");
+function toast(msg){
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  setTimeout(()=>toastEl.classList.remove("show"), 1500);
+}
+function safe(s){ return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function pad3(n){ return String(n).padStart(3, "0"); }
+function issueCode(n){ return `SB-${pad3(n)}`; }
+
+function isOverdue(issue){
+  if(!issue?.dueDate) return false;
+  if(issue.status === "closed") return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(issue.dueDate + "T00:00:00");
+  return d < today;
+}
+
+async function blobToImage(blob){
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.src = url;
+  });
+}
+function drawImageFit(img, maxSide){
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const ratio = Math.min(maxSide / img.width, maxSide / img.height, 1);
+  const w = Math.round(img.width * ratio);
+  const h = Math.round(img.height * ratio);
+  canvas.width = w; canvas.height = h;
+  return { canvas, ctx, w, h };
+}
+async function normalizeImageToJpegBlob(fileOrBlob, maxSidePx=1700){
+  const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
+  const img = await blobToImage(blob);
+  const { canvas, ctx, w, h } = drawImageFit(img, maxSidePx);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0,0,w,h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return await new Promise((resolve) => canvas.toBlob(b => resolve(b), "image/jpeg", 0.88));
+}
+async function fileToDataUrl(file, maxSide=1200){
+  const blob = file instanceof Blob ? file : new Blob([file]);
+  const img = await blobToImage(blob);
+  const { canvas, ctx, w, h } = drawImageFit(img, maxSide);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0,0,w,h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL("image/png");
+}
+
+/* ===================== State ===================== */
+const state = {
+  projects: [],
+  selectedProjectId: null,
+  selectedIssueId: null,
+  photoUrlCache: new Map(),
+  companyLogoDataUrl: null,
+};
+function getProject(){ return state.projects.find(p => p.id === state.selectedProjectId) || null; }
+function getIssue(){
+  const p = getProject();
+  if(!p) return null;
+  return (p.issues||[]).find(i => i.id === state.selectedIssueId) || null;
+}
+
+/* ===================== Branding ===================== */
+function renderBrandPreview(){
+  const img = $("companyLogoPreview");
+  img.src = state.companyLogoDataUrl || "logo.png";
+}
+$("companyLogoInput").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ toast("Please upload an image"); return; }
+  state.companyLogoDataUrl = await fileToDataUrl(file, 1400);
+  await dbPut("branding", { key:"companyLogo", dataUrl: state.companyLogoDataUrl });
+  renderBrandPreview();
+  toast("Company logo saved");
+  e.target.value = "";
+});
+$("btnClearCompanyLogo").onclick = async () => {
+  state.companyLogoDataUrl = null;
+  await dbDelete("branding", "companyLogo");
+  renderBrandPreview();
+  toast("Company logo cleared");
+};
+
+/* ===================== Render ===================== */
+function renderProjects(){
+  const list = $("projectList");
+  list.innerHTML = "";
+  if(state.projects.length === 0){
+    list.innerHTML = `<div class="tiny">No projects yet. Click “New Project”.</div>`;
+  }
+  for(const p of state.projects){
+    const issuesCount = (p.issues||[]).length;
+    const el = document.createElement("div");
+    el.className = "item" + (p.id === state.selectedProjectId ? " active" : "");
+    el.innerHTML = `
+      <div class="title">${safe(p.title || "Untitled Project")}</div>
+      <div class="meta">
+        <span class="pill">${safe(p.reference || "No ref")}</span>
+        <span class="pill">${safe(p.client || "No client")}</span>
+        <span class="pill">${issuesCount} issue${issuesCount===1?"":"s"}</span>
+      </div>`;
+    el.onclick = async () => {
+      state.selectedProjectId = p.id;
+      state.selectedIssueId = null;
+      render();
+      await loadSignatureIntoCanvas();
+    };
+    list.appendChild(el);
+  }
+
+  const proj = getProject();
+  $("btnNewIssue").disabled = !proj;
+  $("btnExport").disabled = !proj;
+  $("btnShare").disabled  = !proj;
+  $("btnSaveProject").disabled = !proj;
+  $("btnDeleteProject").disabled = !proj;
+
+  $("pTitle").value = proj?.title || "";
+  $("pRef").value = proj?.reference || "";
+  $("pClient").value = proj?.client || "";
+  $("pNotes").value = proj?.notes || "";
+}
+
+function renderIssues(){
+  const proj = getProject();
+  const list = $("issueList");
+  list.innerHTML = "";
+  if(!proj){
+    list.innerHTML = `<div class="tiny">Select or create a project.</div>`;
+    return;
+  }
+
+  const filter = $("issueFilter").value;
+  const q = $("issueSearch").value.trim().toLowerCase();
+
+  let issues = (proj.issues||[]).slice();
+  if(filter !== "all") issues = issues.filter(i => i.status === filter);
+  if(q){
+    issues = issues.filter(i =>
+      (i.title||"").toLowerCase().includes(q) ||
+      (i.location||"").toLowerCase().includes(q) ||
+      (i.notes||"").toLowerCase().includes(q) ||
+      (i.assignee||"").toLowerCase().includes(q) ||
+      (i.code||"").toLowerCase().includes(q)
+    );
+  }
+
+  if(issues.length === 0){
+    list.innerHTML = `<div class="tiny">No issues match. Click “New Issue”.</div>`;
+    return;
+  }
+
+  for(const i of issues){
+    const el = document.createElement("div");
+    el.className = "item" + (i.id === state.selectedIssueId ? " active" : "");
+    const statusClass = i.status === "closed" ? "pill closed" : "pill open";
+    const overdue = isOverdue(i);
+    const due = i.dueDate ? new Date(i.dueDate).toLocaleDateString() : "";
+    const ass = (i.assignee || "").trim();
+
+    el.innerHTML = `
+      <div class="title">${safe(i.code || "")} • ${safe(i.title || "Untitled Issue")}</div>
+      <div class="meta">
+        <span class="${statusClass}">${safe(i.status||"open")}</span>
+        ${i.severity === "high" ? `<span class="pill high">high</span>` : `<span class="pill">${safe(i.severity||"medium")}</span>`}
+        <span class="pill">${safe(i.location||"No location")}</span>
+        ${ass ? `<span class="pill">Assignee: ${safe(ass)}</span>` : ``}
+        ${due ? `<span class="pill ${overdue ? "overdue":""}">Due: ${safe(due)}${overdue?" (Overdue)":""}</span>` : ``}
+      </div>`;
+    el.onclick = async () => {
+      state.selectedIssueId = i.id;
+      renderIssues();
+      await renderIssueDetail();
+    };
+    list.appendChild(el);
+  }
+}
+
+async function renderIssueDetail(){
+  const proj = getProject();
+  const issue = getIssue();
+  if(!proj){
+    $("issueForm").style.display = "none";
+    $("issueHint").style.display = "block";
+    $("issueHint").textContent = "Select a project, then create an issue.";
+    return;
+  }
+  if(!issue){
+    $("issueForm").style.display = "none";
+    $("issueHint").style.display = "block";
+    $("issueHint").textContent = "Create an issue, or tap one to edit.";
+    return;
+  }
+
+  $("issueHint").style.display = "none";
+  $("issueForm").style.display = "block";
+
+  $("iCode").value = issue.code || "";
+  $("iTitle").value = issue.title || "";
+  $("iStatus").value = issue.status || "open";
+  $("iSeverity").value = issue.severity || "medium";
+  $("iAssignee").value = issue.assignee || "";
+  $("iDueDate").value = issue.dueDate || "";
+  $("iLocation").value = issue.location || "";
+  $("iNotes").value = issue.notes || "";
+
+  await renderPhotos(issue.id);
+}
+
+async function renderPhotos(issueId){
+  const grid = $("photoGrid");
+  grid.innerHTML = "";
+  const photos = await dbGetPhotosByIssueId(issueId);
+
+  if(photos.length === 0){
+    grid.innerHTML = `<div class="tiny">No photos yet. Use Camera, Quick Capture, or Upload.</div>`;
+    return;
+  }
+
+  for(let idx=0; idx<photos.length; idx++){
+    const ph = photos[idx];
+    let url = state.photoUrlCache.get(ph.id);
+    if(!url){
+      url = URL.createObjectURL(ph.blob);
+      state.photoUrlCache.set(ph.id, url);
+    }
+    const el = document.createElement("div");
+    el.className = "photoCard";
+    el.innerHTML = `
+      <img src="${url}" alt="Issue photo"/>
+      <div class="photoCap">
+        <span>Photo ${idx+1}</span>
+        <div style="display:flex; gap:8px;">
+          <button class="ghost" data-anno="${ph.id}" type="button">Annotate</button>
+          <button class="danger" data-del="${ph.id}" type="button">Remove</button>
+        </div>
+      </div>`;
+    grid.appendChild(el);
+  }
+
+  grid.querySelectorAll("[data-del]").forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-del");
+      if(!confirm("Remove this photo?")) return;
+      const url = state.photoUrlCache.get(id);
+      if(url) URL.revokeObjectURL(url);
+      state.photoUrlCache.delete(id);
+      await dbDelete("photos", id);
+      await renderPhotos(issueId);
+      toast("Photo removed");
+    };
+  });
+  grid.querySelectorAll("[data-anno]").forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      await openAnnotationEditor(btn.getAttribute("data-anno"));
+    };
+  });
+}
+
+function render(){
+  renderProjects();
+  renderIssues();
+  renderIssueDetail();
+}
+
+/* ===================== CRUD Projects / Issues ===================== */
+async function saveProject(proj){
+  await dbPut("projects", proj);
+  state.projects = await dbGetAllProjects();
+}
+
+$("btnNewProject").onclick = async () => {
+  const p = {
+    id: uid(),
+    title: "New Project",
+    reference: "",
+    client: "",
+    notes: "",
+    issueCounter: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    issues: []
+  };
+  await saveProject(p);
+  state.selectedProjectId = p.id;
+  state.selectedIssueId = null;
+  render();
+  await loadSignatureIntoCanvas();
+  toast("Project created");
+};
+
+$("btnSaveProject").onclick = async () => {
+  const p = getProject();
+  if(!p) return;
+  p.title = $("pTitle").value.trim() || "Untitled Project";
+  p.reference = $("pRef").value.trim();
+  p.client = $("pClient").value.trim();
+  p.notes = $("pNotes").value.trim();
+  p.updatedAt = new Date().toISOString();
+  await saveProject(p);
+  renderProjects();
+  toast("Project saved");
+};
+
+$("btnDeleteProject").onclick = async () => {
+  const p = getProject();
+  if(!p) return;
+  if(!confirm(`Delete project "${p.title}" and all its issues/photos/signature?`)) return;
+
+  for(const issue of (p.issues||[])) await dbDeletePhotosByIssueId(issue.id);
+  await dbDelete("signatures", p.id);
+  await dbDelete("projects", p.id);
+
+  for(const [, url] of state.photoUrlCache.entries()) URL.revokeObjectURL(url);
+  state.photoUrlCache.clear();
+
+  state.projects = await dbGetAllProjects();
+  state.selectedProjectId = state.projects[0]?.id || null;
+  state.selectedIssueId = null;
+  render();
+  await loadSignatureIntoCanvas();
+  toast("Project deleted");
+};
+
+$("btnNewIssue").onclick = async () => {
+  const p = getProject();
+  if(!p) return;
+
+  p.issueCounter = Number(p.issueCounter || 0) + 1;
+  const code = issueCode(p.issueCounter);
+
+  const issue = {
+    id: uid(),
+    code,
+    title: "New Issue",
+    status: "open",
+    severity: "medium",
+    assignee: "",
+    dueDate: "",
+    location: "",
+    notes: "",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  p.issues = [issue, ...(p.issues||[])];
+  p.updatedAt = new Date().toISOString();
+  await saveProject(p);
+
+  state.selectedIssueId = issue.id;
+  renderIssues();
+  await renderIssueDetail();
+  toast(`Issue created (${code})`);
+};
+
+$("btnSaveIssue").onclick = async () => {
+  const p = getProject();
+  const i = getIssue();
+  if(!p || !i) return;
+
+  i.title = $("iTitle").value.trim() || "Untitled Issue";
+  i.status = $("iStatus").value;
+  i.severity = $("iSeverity").value;
+  i.assignee = $("iAssignee").value.trim();
+  i.dueDate = $("iDueDate").value;
+  i.location = $("iLocation").value.trim();
+  i.notes = $("iNotes").value.trim();
+  i.updatedAt = new Date().toISOString();
+
+  p.updatedAt = new Date().toISOString();
+  await saveProject(p);
+  renderIssues();
+  toast("Issue saved");
+};
+
+$("btnDeleteIssue").onclick = async () => {
+  const p = getProject();
+  const i = getIssue();
+  if(!p || !i) return;
+  if(!confirm(`Delete issue "${i.code} • ${i.title}" and its photos?`)) return;
+
+  await dbDeletePhotosByIssueId(i.id);
+  p.issues = (p.issues||[]).filter(x => x.id !== i.id);
+  p.updatedAt = new Date().toISOString();
+  await saveProject(p);
+
+  state.selectedIssueId = null;
+  renderIssues();
+  await renderIssueDetail();
+  toast("Issue deleted");
+};
+
+/* ===================== Photos ===================== */
+$("iPhotoInput").addEventListener("change", async (e) => {
+  const issue = getIssue();
+  if(!issue) return;
+  const files = Array.from(e.target.files || []);
+  if(files.length === 0) return;
+
+  for(const file of files){
+    if(!file.type.startsWith("image/")) continue;
+    const blob = await normalizeImageToJpegBlob(file, 1700);
+    const rec = { id: uid(), issueId: issue.id, createdAt: new Date().toISOString(), blob, annotations: [], annoW: null, annoH: null };
+    await dbPut("photos", rec);
+  }
+  e.target.value = "";
+  await renderPhotos(issue.id);
+  toast(files.length === 1 ? "Photo added" : `${files.length} photos added`);
+});
+$("btnQuickCapture").onclick = () => $("iPhotoInput").click();
+
+/* ===================== Camera (HTTPS required) ===================== */
+let camStream = null;
+let camFacingMode = "environment";
+
+$("btnCamera").onclick = async () => {
+  if(!getIssue()) return;
+  await openCamera();
+};
+$("btnCamClose").onclick = async () => closeCamera();
+$("btnCamSwitch").onclick = async () => {
+  camFacingMode = camFacingMode === "environment" ? "user" : "environment";
+  await openCamera(true);
+};
+
+async function openCamera(restart=false){
+  $("camBackdrop").classList.add("show");
+  const video = $("camVideo");
+
+  if(!navigator.mediaDevices?.getUserMedia){
+    toast("Camera not supported. Use Quick Capture/Upload.");
+    $("camBackdrop").classList.remove("show");
+    return;
+  }
+  if(!window.isSecureContext){
+    toast("Live camera needs HTTPS. Use Quick Capture.");
+    $("camBackdrop").classList.remove("show");
+    return;
+  }
+
+  if(camStream){
+    camStream.getTracks().forEach(t=>t.stop());
+    camStream = null;
+  }
+
+  const attempts = [
+    { video: { facingMode: { exact: camFacingMode } }, audio:false },
+    { video: { facingMode: { ideal: camFacingMode } }, audio:false },
+    { video: { facingMode: { ideal: "environment" } }, audio:false },
+    { video: true, audio:false },
+  ];
+  let lastErr = null;
+  for(const c of attempts){
+    try{ camStream = await navigator.mediaDevices.getUserMedia(c); break; }
+    catch(err){ lastErr = err; camStream = null; }
+  }
+  if(!camStream){
+    console.error(lastErr);
+    toast("Camera blocked. Use Quick Capture/Upload.");
+    $("camBackdrop").classList.remove("show");
+    return;
+  }
+
+  try{
+    video.srcObject = camStream;
+    video.setAttribute("playsinline","true");
+    video.muted = true;
+    await video.play();
+    toast("Camera ready");
+  }catch(err){
+    console.error(err);
+    toast("Preview failed. Use Quick Capture.");
+    $("camBackdrop").classList.remove("show");
+    camStream.getTracks().forEach(t=>t.stop());
+    camStream = null;
+  }
+}
+function closeCamera(){
+  $("camBackdrop").classList.remove("show");
+  const video = $("camVideo");
+  try{ video.pause(); }catch(_){}
+  video.srcObject = null;
+  if(camStream){
+    camStream.getTracks().forEach(t=>t.stop());
+    camStream = null;
+  }
+}
+
+$("btnSnap").onclick = async () => {
+  const issue = getIssue();
+  if(!issue) return;
+  const video = $("camVideo");
+  if(!camStream || !video.videoWidth){
+    toast("Camera not ready. Use Quick Capture.");
+    return;
+  }
+  const canvas = $("camCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const blob = await new Promise(r => canvas.toBlob(b=>r(b),"image/jpeg",0.9));
+  const norm = await normalizeImageToJpegBlob(blob, 1700);
+
+  const rec = { id: uid(), issueId: issue.id, createdAt: new Date().toISOString(), blob: norm, annotations: [], annoW: null, annoH: null };
+  await dbPut("photos", rec);
+  await renderPhotos(issue.id);
+  toast("Photo captured");
+};
+
+/* ===================== Annotation (pins+labels) ===================== */
+const annoCanvas = $("annoCanvas");
+const annoCtx = annoCanvas.getContext("2d");
+const anno = {
+  photoId:null,
+  baseImg:null,
+  tool:"rect",
+  dragging:false,
+  startX:0, startY:0,
+  temp:null,
+  shapes:[],
+  history:[],
+  pinCounter:0,
+};
+function setTool(tool){
+  anno.tool = tool;
+  document.querySelectorAll("[data-tool]").forEach(b => b.classList.toggle("active", b.getAttribute("data-tool") === tool));
+  $("pinHint").textContent = tool === "pin" ? "Tap to place a numbered pin. You’ll be asked for a label (legend text)." : "";
+}
+document.querySelectorAll("[data-tool]").forEach(btn => btn.onclick = () => setTool(btn.getAttribute("data-tool")));
+
+$("btnAnnoClose").onclick = () => closeAnno();
+$("btnAnnoUndo").onclick = () => {
+  if(anno.history.length){
+    anno.shapes = anno.history.pop();
+    anno.pinCounter = Math.max(0, ...anno.shapes.filter(s=>s.type==="pin").map(s=>s.num||0), 0);
+    drawAnno();
+  }
+};
+$("btnAnnoClear").onclick = () => {
+  if(!confirm("Clear all annotations?")) return;
+  pushHistory();
+  anno.shapes = [];
+  anno.pinCounter = 0;
+  drawAnno();
+};
+$("btnAnnoSave").onclick = async () => {
+  if(!anno.photoId) return;
+  const rec = await dbGet("photos", anno.photoId);
+  if(!rec) return;
+  rec.annotations = anno.shapes;
+  rec.annoW = annoCanvas.width;
+  rec.annoH = annoCanvas.height;
+  await dbPut("photos", rec);
+  toast("Annotations saved");
+  closeAnno();
+  const issue = getIssue();
+  if(issue) await renderPhotos(issue.id);
+};
+
+function pushHistory(){
+  anno.history.push(JSON.parse(JSON.stringify(anno.shapes)));
+  if(anno.history.length > 30) anno.history.shift();
+}
+function clientToCanvas(e){
+  const rect = annoCanvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (annoCanvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (annoCanvas.height / rect.height);
+  return { x, y };
+}
+
+annoCanvas.addEventListener("pointerdown", async (e) => {
+  if(!anno.baseImg) return;
+  const { x, y } = clientToCanvas(e);
+
+  if(anno.tool === "pin"){
+    const label = prompt("Pin label (for legend):", "Note");
+    if(label && label.trim()){
+      pushHistory();
+      anno.pinCounter += 1;
+      anno.shapes.push({ type:"pin", x, y, num: anno.pinCounter, label: label.trim() });
+      drawAnno();
+    }
+    return;
+  }
+
+  if(anno.tool === "text"){
+    const text = prompt("Text:", "Note");
+    if(text && text.trim()){
+      pushHistory();
+      anno.shapes.push({ type:"text", x, y, text: text.trim() });
+      drawAnno();
+    }
+    return;
+  }
+
+  anno.dragging = true;
+  anno.startX = x; anno.startY = y;
+
+  if(anno.tool === "rect"){
+    anno.temp = { type:"rect", x1:x, y1:y, x2:x, y2:y };
+  }else if(anno.tool === "arrow"){
+    anno.temp = { type:"arrow", x1:x, y1:y, x2:x, y2:y };
+  }else{
+    anno.temp = null;
+  }
+});
+
+annoCanvas.addEventListener("pointermove", (e) => {
+  if(!anno.dragging || !anno.temp) return;
+  const { x, y } = clientToCanvas(e);
+  anno.temp.x2 = x; anno.temp.y2 = y;
+  drawAnno();
+  drawShape(anno.temp, true);
+});
+
+annoCanvas.addEventListener("pointerup", () => {
+  if(!anno.dragging) return;
+  anno.dragging = false;
+  if(!anno.temp) return;
+  pushHistory();
+  if(anno.temp.type === "rect"){
+    const { x1,y1,x2,y2 } = anno.temp;
+    anno.shapes.push({ type:"rect", x: Math.min(x1,x2), y: Math.min(y1,y2), w: Math.abs(x2-x1), h: Math.abs(y2-y1) });
+  }else{
+    anno.shapes.push(anno.temp);
+  }
+  anno.temp = null;
+  drawAnno();
+});
+
+function drawPin(ctx, x, y, num){
+  ctx.save();
+  ctx.fillStyle = "#b00020";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 5;
+  const r = 22;
+  ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "950 22px ui-sans-serif, system-ui";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(String(num), x, y+1);
+  ctx.restore();
+}
+
+function drawShape(s, preview){
+  const ctx = annoCtx;
+  ctx.save();
+  ctx.lineWidth = preview ? 5 : 6;
+  ctx.strokeStyle = "#b00020";
+  ctx.fillStyle = "#b00020";
+  ctx.globalAlpha = preview ? 0.85 : 1;
+  ctx.font = "950 28px ui-sans-serif, system-ui";
+
+  if(s.type === "rect"){
+    const x = s.x ?? Math.min(s.x1, s.x2);
+    const y = s.y ?? Math.min(s.y1, s.y2);
+    const w = s.w ?? Math.abs(s.x2 - s.x1);
+    const h = s.h ?? Math.abs(s.y2 - s.y1);
+    ctx.strokeRect(x,y,w,h);
+  }else if(s.type === "arrow"){
+    const x1=s.x1,y1=s.y1,x2=s.x2,y2=s.y2;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const angle = Math.atan2(y2-y1, x2-x1);
+    const headLen = 28;
+    const a1 = angle - Math.PI/7, a2 = angle + Math.PI/7;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2 - headLen*Math.cos(a1), y2 - headLen*Math.sin(a1));
+    ctx.lineTo(x2 - headLen*Math.cos(a2), y2 - headLen*Math.sin(a2));
+    ctx.closePath();
+    ctx.fill();
+  }else if(s.type === "text"){
+    ctx.fillText(s.text || "", s.x, s.y);
+  }else if(s.type === "pin"){
+    drawPin(ctx, s.x, s.y, s.num || 0);
+  }
+  ctx.restore();
+}
+
+function drawAnno(){
+  annoCtx.clearRect(0,0,annoCanvas.width, annoCanvas.height);
+  annoCtx.drawImage(anno.baseImg, 0, 0, annoCanvas.width, annoCanvas.height);
+  for(const s of anno.shapes) drawShape(s, false);
+}
+
+async function openAnnotationEditor(photoId){
+  const rec = await dbGet("photos", photoId);
+  if(!rec) return;
+  const img = await blobToImage(rec.blob);
+
+  const maxW = 1200;
+  const ratio = Math.min(maxW / img.width, 1);
+  annoCanvas.width = Math.round(img.width * ratio);
+  annoCanvas.height = Math.round(img.height * ratio);
+
+  anno.photoId = photoId;
+  anno.baseImg = img;
+  anno.shapes = rec.annotations || [];
+  anno.history = [];
+  anno.pinCounter = Math.max(0, ...anno.shapes.filter(s=>s.type==="pin").map(s=>s.num||0), 0);
+  setTool("rect");
+
+  $("annoBackdrop").classList.add("show");
+  drawAnno();
+}
+function closeAnno(){
+  $("annoBackdrop").classList.remove("show");
+  anno.photoId = null;
+  anno.baseImg = null;
+  anno.shapes = [];
+  anno.history = [];
+  anno.pinCounter = 0;
+}
+
+/* ===================== Signature ===================== */
+const sigCanvas = $("sigCanvas");
+const sigCtx = sigCanvas.getContext("2d");
+sigCanvas.style.touchAction = "none";
+
+const sig = { drawing:false };
+
+function clearSig(){
+  sigCtx.clearRect(0,0,sigCanvas.width, sigCanvas.height);
+  sigCtx.strokeStyle = "rgba(16,24,40,.18)";
+  sigCtx.lineWidth = 2;
+  sigCtx.beginPath();
+  sigCtx.moveTo(40, sigCanvas.height-60);
+  sigCtx.lineTo(sigCanvas.width-40, sigCanvas.height-60);
+  sigCtx.stroke();
+}
+
+function sigPos(e){
+  const r = sigCanvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (sigCanvas.width / r.width),
+    y: (e.clientY - r.top) * (sigCanvas.height / r.height)
+  };
+}
+
+function sigDown(e){
+  e.preventDefault();
+  sig.drawing = true;
+  sigCanvas.setPointerCapture(e.pointerId);
+  const {x,y} = sigPos(e);
+  sigCtx.strokeStyle = "#101828";
+  sigCtx.lineWidth = 3.8;
+  sigCtx.lineCap = "round";
+  sigCtx.lineJoin = "round";
+  sigCtx.beginPath();
+  sigCtx.moveTo(x,y);
+}
+
+function sigMove(e){
+  if(!sig.drawing) return;
+  e.preventDefault();
+  const {x,y} = sigPos(e);
+  sigCtx.lineTo(x,y);
+  sigCtx.stroke();
+}
+
+function sigUp(e){
+  if(!sig.drawing) return;
+  e.preventDefault();
+  sig.drawing = false;
+  try{ sigCanvas.releasePointerCapture(e.pointerId); }catch(_){}
+}
+
+sigCanvas.addEventListener("pointerdown", sigDown);
+sigCanvas.addEventListener("pointermove", sigMove);
+sigCanvas.addEventListener("pointerup", sigUp);
+sigCanvas.addEventListener("pointercancel", sigUp);
+sigCanvas.addEventListener("pointerleave", sigUp);
+
+$("btnSigClear").onclick = () => { clearSig(); toast("Signature cleared"); };
+$("btnSigSave").onclick = async () => {
+  const p = getProject();
+  if(!p) return;
+  await dbPut("signatures", { projectId: p.id, dataUrl: sigCanvas.toDataURL("image/png") });
+  toast("Signature saved");
+};
+
+async function loadSignatureIntoCanvas(){
+  clearSig();
+  const p = getProject();
+  if(!p) return;
+  const rec = await dbGet("signatures", p.id);
+  if(!rec?.dataUrl) return;
+
+  const img = new Image();
+  img.onload = () => {
+    const maxW = sigCanvas.width - 80, maxH = sigCanvas.height - 80;
+    const r = Math.min(maxW / img.width, maxH / img.height, 1);
+    const w = img.width * r, h = img.height * r;
+    sigCtx.drawImage(img, (sigCanvas.width-w)/2, (sigCanvas.height-h)/2, w, h);
+  };
+  img.src = rec.dataUrl;
+}
+
+/* ===================== PDF Export (legend) ===================== */
+function safeFile(s){ return String(s||"Report").replace(/[^a-z0-9-_]+/gi,"_").slice(0,60); }
+
+function extractPins(photoRec){
+  const pins = (photoRec.annotations||[]).filter(a=>a.type==="pin").map(p=>({ num:p.num||0, label:p.label||"" }));
+  pins.sort((a,b)=>a.num-b.num);
+  return pins;
+}
+
+async function fetchAsDataUrl(path){
+  const res = await fetch(path);
+  const blob = await res.blob();
+  return await new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.readAsDataURL(blob);
+  });
+}
+
+async function renderAnnotatedToDataUrl(photoRec){
+  const img = await blobToImage(photoRec.blob);
+  const { canvas, ctx, w, h } = drawImageFit(img, 1600);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,w,h);
+  ctx.drawImage(img, 0,0,w,h);
+
+  const shapes = photoRec.annotations || [];
+  const annoW = photoRec.annoW || w;
+  const annoH = photoRec.annoH || h;
+  const sx = w/annoW, sy = h/annoH;
+
+  ctx.save();
+  ctx.strokeStyle = "#b00020";
+  ctx.fillStyle = "#b00020";
+  ctx.lineWidth = 6;
+  ctx.font = "950 36px ui-sans-serif, system-ui";
+
+  function drawPdfPin(x,y,num){
+    const r = 28;
+    ctx.fillStyle = "#b00020";
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "#ffffff";
+    ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(String(num), x, y+1);
+    ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+    ctx.fillStyle = "#b00020";
+    ctx.strokeStyle = "#b00020";
+  }
+
+  for(const s of shapes){
+    if(s.type==="rect"){
+      ctx.strokeRect((s.x||0)*sx, (s.y||0)*sy, (s.w||0)*sx, (s.h||0)*sy);
+    }else if(s.type==="arrow"){
+      const x1=(s.x1||0)*sx,y1=(s.y1||0)*sy,x2=(s.x2||0)*sx,y2=(s.y2||0)*sy;
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+      const angle = Math.atan2(y2-y1, x2-x1);
+      const headLen=40; const a1=angle-Math.PI/7, a2=angle+Math.PI/7;
+      ctx.beginPath();
+      ctx.moveTo(x2,y2);
+      ctx.lineTo(x2 - headLen*Math.cos(a1), y2 - headLen*Math.sin(a1));
+      ctx.lineTo(x2 - headLen*Math.cos(a2), y2 - headLen*Math.sin(a2));
+      ctx.closePath(); ctx.fill();
+    }else if(s.type==="text"){
+      ctx.fillText(s.text||"", (s.x||0)*sx, (s.y||0)*sy);
+    }else if(s.type==="pin"){
+      drawPdfPin((s.x||0)*sx, (s.y||0)*sy, s.num||0);
+    }
+  }
+  ctx.restore();
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+async function addPdfHeader(doc){
+  const pageW = doc.internal.pageSize.getWidth();
+  const leftX = 46, topY = 24;
+
+  const companyLogo = state.companyLogoDataUrl;
+  if(companyLogo){
+    try{ doc.addImage(companyLogo, "PNG", leftX, topY, 110, 36); }catch(_){}
+  }
+  try{
+    const sb = await fetchAsDataUrl("logo.png");
+    doc.addImage(sb, "PNG", pageW-46-140, topY, 140, 40);
+  }catch(_){}
+}
+
+async function drawReport(doc, p){
+  const margin = 46;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const contentW = pageW - margin*2;
+
+  function redFrame(){
+    doc.setDrawColor(176,0,32);
+    doc.setLineWidth(3);
+    doc.rect(margin, margin, contentW, pageH - margin*2);
+  }
+
+  // Cover
+  redFrame(); await addPdfHeader(doc);
+  doc.setFont("helvetica","bold"); doc.setFontSize(22);
+  doc.text(p.title || "Site Buddy Report", margin+16, 110, { maxWidth: contentW-32 });
+  doc.setFont("helvetica","normal"); doc.setFontSize(11);
+  doc.text(`Reference: ${p.reference || "-"}`, margin+16, 146);
+  doc.text(`Client: ${p.client || "-"}`, margin+16, 162);
+  doc.text(`Generated: ${new Date().toLocaleString()}`, margin+16, 178);
+
+  if(p.notes){
+    doc.setFont("helvetica","bold"); doc.text("Project Notes", margin+16, 212);
+    doc.setFont("helvetica","normal");
+    doc.text(doc.splitTextToSize(p.notes, contentW-32), margin+16, 230);
+  }
+
+  // Summary
+  doc.addPage(); redFrame(); await addPdfHeader(doc);
+  const issues = (p.issues||[]).slice();
+  const openCount = issues.filter(i=>i.status==="open").length;
+  const closedCount = issues.filter(i=>i.status==="closed").length;
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(18);
+  doc.text("Summary", margin+16, 110);
+  doc.setFont("helvetica","normal"); doc.setFontSize(12);
+  doc.text(`Total issues: ${issues.length}`, margin+16, 144);
+  doc.text(`Open: ${openCount}`, margin+16, 164);
+  doc.text(`Closed: ${closedCount}`, margin+16, 184);
+
+  // Signature
+  const sigRec = await dbGet("signatures", p.id);
+  if(sigRec?.dataUrl){
+    doc.setFont("helvetica","bold"); doc.setFontSize(12);
+    doc.text("Signature", margin+16, 224);
+    try{ doc.addImage(sigRec.dataUrl, "PNG", margin+16, 236, 220, 80); }catch(_){}
+  }
+
+  // Group by area then status
+  const byLoc = new Map();
+  for(const i of issues){
+    const loc = (i.location || "Unspecified area").trim() || "Unspecified area";
+    if(!byLoc.has(loc)) byLoc.set(loc, []);
+    byLoc.get(loc).push(i);
+  }
+  const locs = Array.from(byLoc.keys()).sort((a,b)=>a.localeCompare(b));
+
+  for(const loc of locs){
+    const locIssues = byLoc.get(loc);
+    const open = locIssues.filter(i=>i.status==="open");
+    const closed = locIssues.filter(i=>i.status==="closed");
+
+    for(const block of [
+      { name:"Open issues", items:open },
+      { name:"Closed issues", items:closed }
+    ]){
+      if(block.items.length === 0) continue;
+
+      doc.addPage(); redFrame(); await addPdfHeader(doc);
+      doc.setFont("helvetica","bold"); doc.setFontSize(16);
+      doc.text(loc, margin+16, 110);
+      doc.setFontSize(12);
+      doc.text(block.name, margin+16, 134);
+
+      let y = 164;
+      for(const issue of block.items){
+        const assignee = (issue.assignee || "-").trim() || "-";
+        const dueDate = issue.dueDate ? new Date(issue.dueDate).toLocaleDateString() : "-";
+        const line1 = `${issue.code||""} • ${issue.title||"Untitled"}  •  Severity: ${issue.severity||"medium"}`;
+        const line2 = `Assignee: ${assignee}  •  Due: ${dueDate}  •  Status: ${issue.status||"open"}`;
+        const notes = issue.notes || "-";
+
+        const lines1 = doc.splitTextToSize(line1, contentW-32);
+        const lines2 = doc.splitTextToSize(line2, contentW-32);
+        const lines3 = doc.splitTextToSize(notes, contentW-32);
+
+        const needed = (lines1.length+lines2.length+lines3.length)*14 + 18;
+        if(y + needed > pageH - margin - 40){
+          doc.addPage(); redFrame(); await addPdfHeader(doc);
+          y = 110;
+        }
+
+        doc.setFont("helvetica","bold"); doc.setFontSize(11);
+        doc.text(lines1, margin+16, y); y += lines1.length*14 + 4;
+        doc.setFont("helvetica","normal"); doc.text(lines2, margin+16, y); y += lines2.length*14 + 6;
+        doc.text(lines3, margin+16, y); y += lines3.length*14 + 10;
+
+        const photos = await dbGetPhotosByIssueId(issue.id);
+        for(let k=0; k<photos.length; k++){
+          const ph = photos[k];
+          doc.addPage(); redFrame(); await addPdfHeader(doc);
+          doc.setFont("helvetica","bold"); doc.setFontSize(14);
+          doc.text(`${issue.code||""} • ${issue.title||"Issue"} — Photo ${k+1}`, margin+16, 110);
+
+          const dataUrl = await renderAnnotatedToDataUrl(ph);
+          const imgW = contentW - 32;
+          const imgH = 320;
+          doc.addImage(dataUrl, "JPEG", margin+16, 130, imgW, imgH, undefined, "FAST");
+
+          const pins = extractPins(ph);
+          doc.setFont("helvetica","bold"); doc.setFontSize(12);
+          doc.text("Pin legend", margin+16, 470);
+          doc.setFont("helvetica","normal"); doc.setFontSize(11);
+
+          if(pins.length === 0){
+            doc.setTextColor(102,112,133);
+            doc.text("No pins on this photo.", margin+16, 492);
+            doc.setTextColor(0,0,0);
+          }else{
+            let ly = 492;
+            for(const pin of pins){
+              const line = `${pin.num}. ${pin.label}`;
+              const wrapped = doc.splitTextToSize(line, contentW-32);
+              doc.text(wrapped, margin+16, ly);
+              ly += wrapped.length*14 + 2;
+              if(ly > pageH - margin - 20) break;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+async function exportPdf(){
+  const p = getProject();
+  if(!p){ toast("Select a project first"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"pt", format:"a4" });
+  await drawReport(doc, p);
+  doc.save(`SiteBuddy_${safeFile(p.title || "Report")}.pdf`);
+  toast("PDF exported");
+}
+
+async function buildPdfBlob(project){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"pt", format:"a4" });
+  await drawReport(doc, project);
+  return doc.output("blob");
+}
+
+$("btnExport").onclick = () => exportPdf();
+$("btnShare").onclick = async () => {
+  const p = getProject();
+  if(!p){ toast("Select a project first"); return; }
+  try{
+    const blob = await buildPdfBlob(p);
+    const name = `SiteBuddy_${safeFile(p.title || "Report")}.pdf`;
+    const file = new File([blob], name, { type:"application/pdf" });
+
+    if(navigator.canShare && navigator.canShare({ files:[file] })){
+      await navigator.share({ title:p.title || "Site Buddy Report", text:"Site Buddy report PDF", files:[file] });
+      toast("Shared");
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
+    toast("Downloaded (share not supported)");
+  }catch(e){
+    console.error(e);
+    toast("Share failed");
+  }
+};
+
+/* ===================== PWA install + SW ===================== */
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("btnInstall").style.display = "inline-block";
+});
+$("btnInstall").onclick = async () => {
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $("btnInstall").style.display = "none";
+};
+window.addEventListener("appinstalled", () => {
+  toast("Installed");
+  $("btnInstall").style.display = "none";
+});
+if("serviceWorker" in navigator){
+  window.addEventListener("load", async () => {
+    try{ await navigator.serviceWorker.register("./sw.js"); }
+    catch(e){ console.warn("SW registration failed", e); }
+  });
+}
+
+/* ===================== Reset ===================== */
+$("btnReset").onclick = async () => {
+  if(!confirm("Reset Site Buddy? This deletes all offline data on this device.")) return;
+
+  closeCamera(); closeAnno();
+
+  for(const [, url] of state.photoUrlCache.entries()) URL.revokeObjectURL(url);
+  state.photoUrlCache.clear();
+
+  await new Promise((resolve) => {
+    const req = indexedDB.deleteDatabase(DB_NAME);
+    req.onsuccess = () => resolve(true);
+    req.onerror = () => resolve(true);
+    req.onblocked = () => resolve(true);
+  });
+
+  state.projects = [];
+  state.selectedProjectId = null;
+  state.selectedIssueId = null;
+
+  await dbDelete("branding", "companyLogo");
+  state.companyLogoDataUrl = null;
+  renderBrandPreview();
+
+  render();
+  clearSig();
+  toast("Reset complete");
+};
+
+/* ===================== Inputs ===================== */
+["pTitle","pRef","pClient","pNotes"].forEach(id => $(id).addEventListener("input", () => $("btnSaveProject").disabled = !getProject()));
+$("issueFilter").addEventListener("change", renderIssues);
+$("issueSearch").addEventListener("input", () => {
+  clearTimeout(window.__q);
+  window.__q = setTimeout(renderIssues, 120);
+});
+
+/* ===================== Init ===================== */
+async function init(){
+  state.projects = await dbGetAllProjects();
+  if(!state.selectedProjectId && state.projects.length) state.selectedProjectId = state.projects[0].id;
+
+  const logo = await dbGet("branding", "companyLogo");
+  state.companyLogoDataUrl = logo?.dataUrl || null;
+  renderBrandPreview();
+
+  clearSig();
+  render();
+  await loadSignatureIntoCanvas();
+}
+init();
+</script>
+</body>
+</html>
