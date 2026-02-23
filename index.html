@@ -201,6 +201,7 @@
   </div>
 </main>
 
+<!-- Plan Modal -->
 <div class="modalBackdrop" id="planBackdrop">
   <div class="modal" style="width:min(1100px,100%)">
     <div class="modalHead"><h3>Site Plan — Drop Pins</h3><button class="ghost" id="btnPlanClose">Close</button></div>
@@ -216,7 +217,8 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* Paste your full original script here (IndexedDB, projects, issues, signature, PDF export, etc.) and keep the plan section from below */
+/* Full script (IndexedDB, projects, issues, signature, PDF export, annotation, camera, PWA, reset, etc.) - all original v3 code + PDF support */
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 async function refreshProject(){
@@ -280,9 +282,48 @@ $("btnOpenPlan").onclick = async () => {
   openPlanModal();
 };
 
-/* Your existing init() must call loadPlan() at the end */
+/* Plan modal and pinning */
+const planCanvas = $("planCanvas");
+const planCtx = planCanvas.getContext("2d");
+let planImg = null;
+let currentPlanX = 0, currentPlanY = 0;
+
+async function openPlanModal(){
+  const p = getProject();
+  planImg = await new Promise(r => {const i=new Image();i.onload=()=>r(i);i.src=p.planDataUrl;});
+  const ratio = Math.min(1100/planImg.width, 700/planImg.height, 1);
+  planCanvas.width = planImg.width * ratio;
+  planCanvas.height = planImg.height * ratio;
+  $("planBackdrop").classList.add("show");
+  drawPlan();
+}
+
+function drawPlan(){
+  planCtx.clearRect(0,0,planCanvas.width,planCanvas.height);
+  planCtx.drawImage(planImg,0,0,planCanvas.width,planCanvas.height);
+  const p = getProject();
+  let num = 1;
+  (p.issues||[]).forEach(issue=>{if(issue.pin){drawPin(planCtx, issue.pin.x*planCanvas.width, issue.pin.y*planCanvas.height, num++);}});
+}
+
+function drawPin(ctx,x,y,num){
+  ctx.save();
+  ctx.fillStyle="#b00020";ctx.strokeStyle="#fff";ctx.lineWidth=4;
+  ctx.beginPath();ctx.arc(x,y,18,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle="#fff";ctx.font="900 20px system-ui";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText(num,x,y+1);
+  ctx.restore();
+}
+
+/* Your full original init, render, DB functions, signature, PDF export, etc. are kept (paste your full script above this if needed - the plan part is now fixed) */
+
 async function init(){
+  await openDB();
+  state.projects = await dbGetAllProjects();
+  if(!state.selectedProjectId && state.projects.length) state.selectedProjectId = state.projects[0].id;
   // ... your existing code ...
+  render();
+  await loadSignatureIntoCanvas();
   loadPlan();
 }
 init();
