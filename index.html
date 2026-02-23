@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
@@ -14,7 +14,6 @@
       --text:#0b1220;
       --muted:#667085;
       --border:#b00020;
-      --borderSoft:#f3c3c9;
       --shadow: 0 14px 40px rgba(16,24,40,.10);
       --radius: 18px;
       --focus: rgba(176,0,32,.20);
@@ -25,6 +24,7 @@
       --danger:#b00020;
       --ok:#0f766e;
       --chip:#f8fafc;
+      --soft:#f8fafc;
     }
 
     *{box-sizing:border-box}
@@ -62,7 +62,8 @@
     .brand h1{margin:0; font-size:16px; letter-spacing:.2px}
     .brand p{margin:2px 0 0; font-size:12px; color:var(--muted)}
 
-    .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center}
+    .exportRow{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
 
     button{
       border:1px solid rgba(16,24,40,.12);
@@ -99,39 +100,7 @@
     }
     button:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none}
 
-    main .grid{
-      display:grid;
-      grid-template-columns: 340px 1fr;
-      gap:14px;
-      padding: 16px 0 28px;
-    }
-    @media (max-width: 980px){ main .grid{grid-template-columns: 1fr} }
-
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.86));
-      border: 2px solid rgba(176,0,32,.14);
-      border-left: 6px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-      animation: enter .28s ease both;
-    }
-    @keyframes enter{
-      from{ opacity:0; transform: translateY(8px); }
-      to{ opacity:1; transform: translateY(0); }
-    }
-
-    .card h2{
-      margin:0 0 10px;
-      font-size: 14px;
-      display:flex; justify-content:space-between; align-items:center; gap:10px;
-      letter-spacing:.2px;
-    }
-
-    .sub{margin:6px 0 0; font-size:12px; color:var(--muted)}
-    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
-
-    input, textarea, select{
+    select, input, textarea{
       width:100%;
       border: 1px solid rgba(16,24,40,.14);
       border-radius: 14px;
@@ -140,11 +109,96 @@
       color: var(--text);
       outline:none;
     }
-    input:focus, textarea:focus, select:focus{
+    select:focus, input:focus, textarea:focus{
       box-shadow: 0 0 0 4px var(--focus);
       border-color: rgba(176,0,32,.35);
     }
     textarea{min-height: 90px; resize: vertical}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    .tiny{font-size:11px; color:var(--muted)}
+    .sub{margin:6px 0 0; font-size:12px; color:var(--muted)}
+    .hr{height:1px; background: rgba(16,24,40,.10); margin:12px 0;}
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.86));
+      border: 2px solid rgba(176,0,32,.14);
+      border-left: 6px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    .card h2{
+      margin:0 0 10px;
+      font-size: 14px;
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      letter-spacing:.2px;
+    }
+
+    /* Tabs */
+    .tabs{
+      display:flex; gap:8px; flex-wrap:wrap;
+      padding: 10px 16px 14px;
+      border-top: 1px solid rgba(16,24,40,.08);
+    }
+    .tab{
+      padding:10px 12px;
+      border-radius: 999px;
+      border:1px solid rgba(16,24,40,.12);
+      background:#fff;
+      font-weight: 950;
+      cursor:pointer;
+      display:flex; gap:8px; align-items:center;
+    }
+    .tab.active{
+      border-color: rgba(176,0,32,.35);
+      box-shadow: 0 0 0 4px var(--focus);
+      color: var(--border);
+    }
+    .badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width: 24px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 950;
+      border:1px solid rgba(16,24,40,.12);
+      background: var(--chip);
+      color: var(--muted);
+    }
+    .badge.red{border-color: rgba(176,0,32,.35); color: var(--border); background: rgba(176,0,32,.05);}
+
+    /* Screens + transitions */
+    .screenWrap{
+      position: relative;
+      min-height: 560px;
+      padding: 16px 0 28px;
+    }
+    .screen{
+      position:absolute; inset: 0;
+      opacity:0;
+      transform: translateY(10px);
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .screen.active{
+      opacity:1;
+      transform: translateY(0);
+      pointer-events:auto;
+      position: relative;
+    }
+    @media (prefers-reduced-motion: reduce){
+      .screen{transition:none}
+      button{transition:none}
+    }
+
+    /* Layout */
+    .grid2{
+      display:grid;
+      grid-template-columns: 340px 1fr;
+      gap:14px;
+      align-items:start;
+    }
+    @media (max-width: 980px){ .grid2{grid-template-columns: 1fr} }
 
     .row{display:flex; gap:10px}
     .row>*{flex:1}
@@ -161,11 +215,6 @@
       cursor:pointer;
       background:#fff;
       transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
-      animation: pop .18s ease both;
-    }
-    @keyframes pop{
-      from{ opacity:0; transform: translateY(6px); }
-      to{ opacity:1; transform: translateY(0); }
     }
     .item:hover{transform: translateY(-1px); box-shadow: 0 12px 30px rgba(16,24,40,.10)}
     .item.active{
@@ -187,18 +236,7 @@
     .pill.high{border-color: rgba(176,0,32,.45); color: var(--border)}
     .pill.overdue{border-color: rgba(176,0,32,.55); color: var(--border); font-weight:950}
 
-    .split{
-      display:grid;
-      grid-template-columns: 1fr 430px;
-      gap:14px;
-      align-items:start;
-    }
-    @media (max-width: 980px){ .split{grid-template-columns:1fr} }
-
-    .hr{height:1px; background: rgba(16,24,40,.10); margin:12px 0;}
-    .tiny{font-size:11px; color:var(--muted)}
-
-    /* PHOTO GRID (Squares) */
+    /* Photos - squares */
     .photoGrid{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -212,9 +250,7 @@
       overflow:hidden;
       background:#fff;
       box-shadow: 0 10px 24px rgba(16,24,40,.08);
-      animation: pop .18s ease both;
     }
-
     .photoSquare{
       position: relative;
       width:100%;
@@ -244,14 +280,121 @@
       object-position: center;
       display:block;
     }
-
     .photoCap{
       padding: 8px 10px;
       display:flex; justify-content:space-between; align-items:center; gap:8px;
       color:var(--muted); font-size:12px;
     }
 
-    /* MODALS + TRANSITIONS */
+    /* Dashboard */
+    .dashGrid{
+      display:grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 980px){ .dashGrid{grid-template-columns: repeat(2, minmax(0, 1fr));} }
+
+    .dashTile{
+      border:1px solid rgba(16,24,40,.12);
+      border-radius: 16px;
+      padding:10px;
+      background: #fff;
+      box-shadow: 0 10px 24px rgba(16,24,40,.06);
+    }
+    .dashTile .k{font-size:11px; color:var(--muted);}
+    .dashTile .v{font-size:18px; font-weight:950; margin-top:2px;}
+    .dashTile .s{font-size:11px; margin-top:6px; color:var(--muted);}
+    .dashTile.red{border-left:5px solid var(--border);}
+    .dashTile.green{border-left:5px solid var(--ok);}
+
+    .panel{
+      border:1px solid rgba(16,24,40,.12);
+      border-radius: 16px;
+      padding:10px;
+      background:#fff;
+      box-shadow: 0 10px 24px rgba(16,24,40,.06);
+    }
+    .panelHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+      flex-wrap:wrap;
+    }
+    .panelHead .t{font-weight:950; font-size:12px;}
+    .panelHead .a{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+
+    .chartRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 980px){ .chartRow{grid-template-columns:1fr;} }
+
+    .chartBox{
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding:10px;
+      background: rgba(176,0,32,.02);
+    }
+    .chartTitle{font-size:12px; font-weight:950; margin-bottom:8px;}
+    .chartCanvas{width:100%; height:180px; display:block; border-radius: 14px; background:#fff; border:1px solid rgba(16,24,40,.08);}
+
+    .groupList{display:flex; flex-direction:column; gap:8px;}
+    .groupRow{
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding:10px;
+      background:#fff;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .groupRow .name{font-weight:950; font-size:12px;}
+    .groupRow .stats{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+    .groupRow .stats .pill{font-size:11px}
+    .groupRow .btns{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+
+    .dueList{display:flex; flex-direction:column; gap:8px; max-height:300px; overflow:auto;}
+    .dueItem{
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding:10px;
+      background:#fff;
+      cursor:pointer;
+    }
+    .dueItem:hover{box-shadow: 0 12px 30px rgba(16,24,40,.10)}
+    .dueItem .line1{font-weight:950; font-size:12px;}
+    .dueItem .line2{font-size:11px; color:var(--muted); margin-top:6px;}
+
+    /* Areas screen */
+    .areaCards{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:10px;
+    }
+    @media (max-width: 980px){ .areaCards{grid-template-columns: repeat(2, minmax(0, 1fr));} }
+    @media (max-width: 520px){ .areaCards{grid-template-columns: 1fr;} }
+
+    .areaCard{
+      border:1px solid rgba(16,24,40,.12);
+      border-radius: 18px;
+      background:#fff;
+      padding:12px;
+      box-shadow: 0 10px 24px rgba(16,24,40,.06);
+      cursor:pointer;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .areaCard:hover{transform: translateY(-1px); box-shadow: 0 14px 36px rgba(16,24,40,.10)}
+    .areaCard .h{display:flex; justify-content:space-between; align-items:center; gap:10px}
+    .areaCard .name{font-weight:950; font-size:13px}
+    .areaCard .nums{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px}
+
+    /* Modal */
     .modalBackdrop{
       position: fixed; inset:0;
       background: rgba(16,24,40,.45);
@@ -262,7 +405,7 @@
     }
     .modalBackdrop.show{display:flex}
     .modal{
-      width:min(1020px, 100%);
+      width:min(1040px, 100%);
       background:#fff;
       border-radius: 20px;
       box-shadow: 0 18px 70px rgba(0,0,0,.35);
@@ -280,6 +423,7 @@
       padding: 12px 14px;
       border-bottom: 2px solid rgba(16,24,40,.08);
       background: linear-gradient(180deg, rgba(176,0,32,.06), rgba(255,255,255,.92));
+      flex-wrap:wrap;
     }
     .modalHead h3{margin:0; font-size:14px; letter-spacing:.2px}
     .modalBody{padding: 12px 14px;}
@@ -320,7 +464,7 @@
       background: rgba(176,0,32,.02);
     }
     .brandPreview{
-      width:100px; height:46px;
+      width:110px; height:50px;
       border-radius: 14px;
       border:1px solid rgba(16,24,40,.10);
       background:#fff;
@@ -328,100 +472,6 @@
       overflow:hidden;
     }
     .brandPreview img{width:100%; height:100%; object-fit:contain}
-
-    /* DASHBOARD */
-    .dashLayout{
-      display:grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap:10px;
-      align-items:start;
-      margin-bottom: 12px;
-    }
-    @media (max-width: 980px){ .dashLayout{grid-template-columns:1fr;} }
-
-    .dashGrid{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap:10px;
-    }
-    @media (max-width: 980px){ .dashGrid{grid-template-columns: repeat(2, minmax(0, 1fr));} }
-
-    .dashTile{
-      border:1px solid rgba(16,24,40,.12);
-      border-radius: 16px;
-      padding:10px;
-      background: #fff;
-      box-shadow: 0 10px 24px rgba(16,24,40,.06);
-      animation: pop .18s ease both;
-    }
-    .dashTile .k{font-size:11px; color:var(--muted);}
-    .dashTile .v{font-size:18px; font-weight:950; margin-top:2px;}
-    .dashTile .s{font-size:11px; margin-top:6px; color:var(--muted);}
-    .dashTile.red{border-left:5px solid var(--border);}
-    .dashTile.green{border-left:5px solid var(--ok);}
-
-    .panel{
-      border:1px solid rgba(16,24,40,.12);
-      border-radius: 16px;
-      padding:10px;
-      background:#fff;
-      box-shadow: 0 10px 24px rgba(16,24,40,.06);
-    }
-    .panelHead{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:8px;
-    }
-    .panelHead .t{font-weight:950; font-size:12px;}
-    .panelHead .a{display:flex; gap:8px; flex-wrap:wrap;}
-
-    .chartRow{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    @media (max-width: 980px){ .chartRow{grid-template-columns:1fr;} }
-
-    .chartBox{
-      border:1px solid rgba(16,24,40,.10);
-      border-radius: 16px;
-      padding:10px;
-      background: rgba(176,0,32,.02);
-    }
-    .chartTitle{font-size:12px; font-weight:950; margin-bottom:8px;}
-    .chartCanvas{width:100%; height:180px; display:block; border-radius: 14px; background:#fff; border:1px solid rgba(16,24,40,.08);}
-
-    .groupList{display:flex; flex-direction:column; gap:8px;}
-    .groupRow{
-      border:1px solid rgba(16,24,40,.10);
-      border-radius: 16px;
-      padding:10px;
-      background:#fff;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-    }
-    .groupRow .name{font-weight:950; font-size:12px;}
-    .groupRow .stats{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
-    .groupRow .stats .pill{font-size:11px}
-    .groupRow .btns{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
-
-    .dueList{display:flex; flex-direction:column; gap:8px; max-height:220px; overflow:auto;}
-    .dueItem{
-      border:1px solid rgba(16,24,40,.10);
-      border-radius: 16px;
-      padding:10px;
-      background:#fff;
-    }
-    .dueItem .line1{font-weight:950; font-size:12px;}
-    .dueItem .line2{font-size:11px; color:var(--muted); margin-top:6px;}
-
-    @media (prefers-reduced-motion: reduce){
-      *{animation:none !important; transition:none !important;}
-    }
   </style>
 </head>
 
@@ -435,80 +485,106 @@
         <p>Offline audits • Photos • Pins • Reports • PWA</p>
       </div>
     </div>
+
     <div class="actions">
       <button class="primary" id="btnNewProject">+ New Project</button>
       <button class="secondary" id="btnNewIssue" disabled>+ New Issue</button>
-      <button class="primary" id="btnExport" disabled>Export PDF</button>
-      <button class="secondary" id="btnShare" disabled>Share PDF</button>
+
+      <div class="exportRow">
+        <select id="exportTemplate" style="width: 180px;">
+          <option value="client" selected>Client-ready PDF</option>
+          <option value="internal">Internal PDF</option>
+        </select>
+        <button class="primary" id="btnExport" disabled>Export PDF</button>
+        <button class="secondary" id="btnShare" disabled>Share PDF</button>
+      </div>
+
       <button class="ghost" id="btnInstall" style="display:none;">Install</button>
       <button class="danger" id="btnReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="tabs wrap" style="padding-top:0;">
+    <div class="tab active" data-screen="dashboard">
+      Dashboard <span class="badge" id="bTotal">0</span>
+    </div>
+    <div class="tab" data-screen="issues">
+      Issues <span class="badge" id="bOpen">0</span>
+    </div>
+    <div class="tab" data-screen="areas">
+      Areas <span class="badge" id="bAreas">0</span>
+    </div>
+    <div class="tab" data-screen="today">
+      Today <span class="badge red" id="bDue">0</span>
     </div>
   </div>
 </header>
 
 <main class="wrap">
-  <div class="grid">
-    <section class="card">
-      <h2>Projects <span class="tiny">Select a project</span></h2>
-      <div id="projectList" class="list"></div>
-      <div class="hr"></div>
+  <div class="screenWrap">
 
-      <h2>Project Details</h2>
-      <label>Title</label>
-      <input id="pTitle" placeholder="e.g., Riverside Apartments – Block B"/>
+    <!-- DASHBOARD SCREEN -->
+    <section class="screen active" id="screen-dashboard">
+      <div class="grid2">
+        <section class="card">
+          <h2>Projects <span class="tiny">Select a project</span></h2>
+          <div id="projectList" class="list"></div>
+          <div class="hr"></div>
 
-      <div class="row">
-        <div>
-          <label>Reference</label>
-          <input id="pRef" placeholder="e.g., RB-2026-014"/>
-        </div>
-        <div>
-          <label>Client</label>
-          <input id="pClient" placeholder="e.g., Acme Property"/>
-        </div>
-      </div>
+          <h2>Project Details</h2>
+          <label>Title</label>
+          <input id="pTitle" placeholder="e.g., Riverside Apartments – Block B"/>
 
-      <label>Notes</label>
-      <textarea id="pNotes" placeholder="Optional site notes…"></textarea>
-
-      <div class="hr"></div>
-      <h2>Branding</h2>
-      <div class="brandBox">
-        <div class="brandPreview" title="Company logo used in PDF header">
-          <img id="companyLogoPreview" src="logo.png" alt="Company logo"/>
-        </div>
-        <div style="flex:1; min-width: 180px;">
-          <div class="tiny" style="margin-bottom:6px;">Upload your company logo (saved offline on this device)</div>
-          <input id="companyLogoInput" type="file" accept="image/*"/>
-          <div style="display:flex; gap:10px; margin-top:8px;">
-            <button class="ghost" id="btnClearCompanyLogo" type="button">Clear</button>
+          <div class="row">
+            <div>
+              <label>Reference</label>
+              <input id="pRef" placeholder="e.g., RB-2026-014"/>
+            </div>
+            <div>
+              <label>Client</label>
+              <input id="pClient" placeholder="e.g., Acme Property"/>
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div class="hr"></div>
-      <div class="row">
-        <button class="primary" id="btnSaveProject" disabled>Save</button>
-        <button class="danger" id="btnDeleteProject" disabled>Delete</button>
-      </div>
+          <label>Notes</label>
+          <textarea id="pNotes" placeholder="Optional site notes…"></textarea>
 
-      <p class="sub">Stored offline on this device (IndexedDB). No internet needed.</p>
-    </section>
+          <div class="hr"></div>
+          <h2>Branding</h2>
+          <div class="brandBox">
+            <div class="brandPreview" title="Company logo used in PDF header">
+              <img id="companyLogoPreview" src="logo.png" alt="Company logo"/>
+            </div>
+            <div style="flex:1; min-width: 180px;">
+              <div class="tiny" style="margin-bottom:6px;">Upload your company logo (saved offline on this device)</div>
+              <input id="companyLogoInput" type="file" accept="image/*"/>
+              <div style="display:flex; gap:10px; margin-top:8px;">
+                <button class="ghost" id="btnClearCompanyLogo" type="button">Clear</button>
+              </div>
+            </div>
+          </div>
 
-    <section class="card">
-      <h2>Issues <span class="tiny">Per project</span></h2>
+          <div class="hr"></div>
+          <div class="row">
+            <button class="primary" id="btnSaveProject" disabled>Save</button>
+            <button class="danger" id="btnDeleteProject" disabled>Delete</button>
+          </div>
 
-      <!-- DASHBOARD OVERVIEW -->
-      <div id="dashboard" style="margin-bottom:12px;">
-        <div class="dashGrid" id="dashGrid"></div>
+          <p class="sub">Stored offline on this device (IndexedDB). No internet needed.</p>
+        </section>
 
-        <div class="dashLayout" style="margin-top:10px;">
-          <div class="panel">
+        <section class="card">
+          <h2>Dashboard Overview <span class="tiny" id="dashTitleHint"></span></h2>
+
+          <div class="dashGrid" id="dashGrid"></div>
+
+          <div class="panel" style="margin-top:10px;">
             <div class="panelHead">
               <div class="t">Charts</div>
               <div class="a">
                 <button class="ghost" id="btnExportOpen" type="button">Export Open</button>
                 <button class="ghost" id="btnExportClosed" type="button">Export Closed</button>
+                <button class="ghost" id="btnExportAll" type="button">Export All</button>
               </div>
             </div>
             <div class="chartRow">
@@ -524,7 +600,7 @@
             <div class="tiny" id="dashNote" style="margin-top:10px;"></div>
           </div>
 
-          <div class="panel">
+          <div class="panel" style="margin-top:10px;">
             <div class="panelHead">
               <div class="t">Due today / overdue</div>
               <div class="a">
@@ -534,22 +610,27 @@
             <div class="dueList" id="dueList"></div>
             <div class="tiny" id="dueHint" style="margin-top:8px;"></div>
           </div>
-        </div>
 
-        <div class="panel" style="margin-top:10px;">
-          <div class="panelHead">
-            <div class="t">Grouped by area</div>
-            <div class="a">
-              <button class="ghost" id="btnExportByArea" type="button">Export All Areas</button>
+          <div class="panel" style="margin-top:10px;">
+            <div class="panelHead">
+              <div class="t">Grouped by area</div>
+              <div class="a">
+                <button class="ghost" id="btnGoAreas" type="button">Open Areas</button>
+              </div>
             </div>
+            <div class="groupList" id="areaGroups"></div>
+            <div class="tiny" id="areaHint" style="margin-top:8px;"></div>
           </div>
-          <div class="groupList" id="areaGroups"></div>
-          <div class="tiny" id="areaHint" style="margin-top:8px;"></div>
-        </div>
+        </section>
       </div>
+    </section>
 
-      <div class="split" style="margin-top:10px;">
-        <div>
+    <!-- ISSUES SCREEN -->
+    <section class="screen" id="screen-issues">
+      <div class="grid2">
+        <section class="card">
+          <h2>Issues <span class="tiny">Per project</span></h2>
+
           <div class="row">
             <div>
               <label>Filter</label>
@@ -561,17 +642,22 @@
             </div>
             <div>
               <label>Search</label>
-              <input id="issueSearch" placeholder="Title / location / notes / assignee…"/>
+              <input id="issueSearch" placeholder="Title / location / notes / assignee / SB-001…"/>
             </div>
           </div>
 
           <div style="height:10px"></div>
-          <div id="issueList" class="list" style="max-height: 380px;"></div>
-        </div>
+          <div id="issueList" class="list"></div>
 
-        <div>
-          <h2 style="margin-bottom:6px;">Issue Details</h2>
-          <p class="sub" id="issueHint">Select a project, then create an issue.</p>
+          <div class="hr"></div>
+          <div class="row">
+            <button class="ghost" id="btnIssuesExportOpen" type="button">Export Open</button>
+            <button class="ghost" id="btnIssuesExportClosed" type="button">Export Closed</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Issue Details <span class="tiny" id="issueHint">Select a project, then create an issue.</span></h2>
 
           <div id="issueForm" style="display:none;">
             <label>Issue ID</label>
@@ -640,13 +726,65 @@
               <button class="ghost" id="btnSigClear" type="button">Clear signature</button>
               <button class="ghost" id="btnSigSave" type="button">Save signature</button>
             </div>
+
+            <div class="hr"></div>
+            <p class="tiny">Pins: open a photo → Annotate → Pin tool → tap to place 1,2,3… and label → PDF auto legend.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- AREAS SCREEN -->
+    <section class="screen" id="screen-areas">
+      <section class="card">
+        <h2>Areas <span class="tiny">Tap an area to open Area View</span></h2>
+        <div class="row">
+          <div>
+            <label>Search areas</label>
+            <input id="areaSearch" placeholder="e.g., Level 2, Corridor, Kitchen..."/>
+          </div>
+          <div>
+            <label>Quick export</label>
+            <button class="primary" id="btnAreasExportAll" type="button" style="width:100%;">Export All (Grouped)</button>
           </div>
         </div>
-      </div>
-
-      <div class="hr"></div>
-      <p class="tiny">Pins: open a photo → Annotate → Pin tool → tap to place 1,2,3… and label → PDF auto legend.</p>
+        <div style="height:10px"></div>
+        <div class="areaCards" id="areaCards"></div>
+        <div class="tiny" id="areasHint" style="margin-top:10px;"></div>
+      </section>
     </section>
+
+    <!-- TODAY SCREEN -->
+    <section class="screen" id="screen-today">
+      <section class="card">
+        <h2>Today <span class="tiny">Overdue + Due today</span></h2>
+
+        <div class="row">
+          <div>
+            <label>Assignee filter (optional)</label>
+            <input id="todayAssignee" placeholder="Type an assignee name to filter…"/>
+          </div>
+          <div>
+            <label>Quick export</label>
+            <button class="primary" id="btnTodayExportDue" type="button" style="width:100%;">Export Due / Overdue</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="panel">
+          <div class="panelHead">
+            <div class="t">Due items</div>
+            <div class="a">
+              <button class="ghost" id="btnTodayJumpIssues" type="button">Open Issues</button>
+            </div>
+          </div>
+          <div class="dueList" id="todayList"></div>
+          <div class="tiny" id="todayHint" style="margin-top:8px;"></div>
+        </div>
+      </section>
+    </section>
+
   </div>
 </main>
 
@@ -696,13 +834,36 @@
   </div>
 </div>
 
+<!-- Area View Modal -->
+<div class="modalBackdrop" id="areaBackdrop">
+  <div class="modal">
+    <div class="modalHead">
+      <h3 id="areaModalTitle">Area View</h3>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="ghost" id="btnAreaExport" type="button">Export this Area</button>
+        <button class="secondary" id="btnAreaOpenIssues" type="button">View in Issues</button>
+        <button class="danger" id="btnAreaClose" type="button">Close</button>
+      </div>
+    </div>
+    <div class="modalBody">
+      <div class="panel">
+        <div class="panelHead">
+          <div class="t">Area issues</div>
+          <div class="a tiny" id="areaStats"></div>
+        </div>
+        <div class="list" id="areaIssueList" style="max-height:420px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
 /* ===================== IndexedDB ===================== */
-const DB_NAME = "sitebuddy_db_v7";
+const DB_NAME = "sitebuddy_db_v8";
 const DB_VER  = 1;
 
 function openDB(){
@@ -811,7 +972,6 @@ function todayISO(){
   const dd = String(d.getDate()).padStart(2,"0");
   return `${y}-${m}-${dd}`;
 }
-
 function isOverdue(issue){
   if(!issue?.dueDate) return false;
   if(issue.status === "closed") return false;
@@ -824,7 +984,6 @@ function isDueToday(issue){
   if(issue.status === "closed") return false;
   return issue.dueDate === todayISO();
 }
-
 async function blobToImage(blob){
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(blob);
@@ -869,6 +1028,8 @@ const state = {
   selectedIssueId: null,
   photoUrlCache: new Map(),
   companyLogoDataUrl: null,
+  currentScreen: "dashboard",
+  areaModalArea: null,
 };
 function getProject(){ return state.projects.find(p => p.id === state.selectedProjectId) || null; }
 function getIssue(){
@@ -876,11 +1037,26 @@ function getIssue(){
   if(!p) return null;
   return (p.issues||[]).find(i => i.id === state.selectedIssueId) || null;
 }
+function getTemplate(){ return $("exportTemplate").value || "client"; }
+
+/* ===================== Screen Navigation ===================== */
+function setScreen(name){
+  state.currentScreen = name;
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.screen === name));
+  document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === `screen-${name}`));
+  // refresh the screen content (lightweight)
+  if(name === "dashboard") renderDashboard();
+  if(name === "issues") { renderIssues(); renderIssueDetail(); }
+  if(name === "areas") renderAreas();
+  if(name === "today") renderToday();
+}
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => setScreen(t.dataset.screen));
+$("btnGoAreas").onclick = () => setScreen("areas");
+$("btnTodayJumpIssues").onclick = () => setScreen("issues");
 
 /* ===================== Branding ===================== */
 function renderBrandPreview(){
-  const img = $("companyLogoPreview");
-  img.src = state.companyLogoDataUrl || "logo.png";
+  $("companyLogoPreview").src = state.companyLogoDataUrl || "logo.png";
 }
 $("companyLogoInput").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
@@ -914,14 +1090,12 @@ function drawDonut(canvas, parts, title){
   const r = Math.min(W,H)*0.32;
   const total = parts.reduce((s,p)=>s+p.value,0) || 1;
 
-  // ring background
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI*2);
   ctx.strokeStyle = "rgba(16,24,40,.08)";
   ctx.lineWidth = r*0.45;
   ctx.stroke();
 
-  // segments (no fixed colors? -> use safe neutral / red / dark)
   const segColors = ["#b00020", "#101828", "#667085", "#0f766e"];
   let a = -Math.PI/2;
   parts.forEach((p, idx) => {
@@ -935,7 +1109,6 @@ function drawDonut(canvas, parts, title){
     a += ang;
   });
 
-  // center text
   ctx.fillStyle = "#101828";
   ctx.font = "900 26px ui-sans-serif, system-ui";
   ctx.textAlign = "center";
@@ -946,7 +1119,6 @@ function drawDonut(canvas, parts, title){
   ctx.fillStyle = "#667085";
   ctx.fillText(title || "", cx, cy + 26);
 
-  // legend
   let lx = 18, ly = 22;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
@@ -967,7 +1139,6 @@ function drawBars(canvas, bars){
   const bw = (W - pad*2) / bars.length * 0.66;
   const gap = (W - pad*2) / bars.length * 0.34;
 
-  // axes
   ctx.strokeStyle = "rgba(16,24,40,.10)";
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -995,9 +1166,75 @@ function drawBars(canvas, bars){
   });
 }
 
-/* ===================== Dashboard Overview ===================== */
+/* ===================== Render Projects ===================== */
+async function saveProject(proj){
+  await dbPut("projects", proj);
+  state.projects = await dbGetAllProjects();
+}
+function renderProjects(){
+  const list = $("projectList");
+  list.innerHTML = "";
+  if(state.projects.length === 0){
+    list.innerHTML = `<div class="tiny">No projects yet. Click “New Project”.</div>`;
+  }
+  for(const p of state.projects){
+    const issuesCount = (p.issues||[]).length;
+    const el = document.createElement("div");
+    el.className = "item" + (p.id === state.selectedProjectId ? " active" : "");
+    el.innerHTML = `
+      <div class="title">${safe(p.title || "Untitled Project")}</div>
+      <div class="meta">
+        <span class="pill">${safe(p.reference || "No ref")}</span>
+        <span class="pill">${safe(p.client || "No client")}</span>
+        <span class="pill">${issuesCount} issue${issuesCount===1?"":"s"}</span>
+      </div>`;
+    el.onclick = async () => {
+      state.selectedProjectId = p.id;
+      state.selectedIssueId = null;
+      renderAll();
+      await loadSignatureIntoCanvas();
+      toast("Project selected");
+    };
+    list.appendChild(el);
+  }
+
+  const proj = getProject();
+  $("btnNewIssue").disabled = !proj;
+  $("btnExport").disabled = !proj;
+  $("btnShare").disabled  = !proj;
+  $("btnSaveProject").disabled = !proj;
+  $("btnDeleteProject").disabled = !proj;
+
+  $("pTitle").value = proj?.title || "";
+  $("pRef").value = proj?.reference || "";
+  $("pClient").value = proj?.client || "";
+  $("pNotes").value = proj?.notes || "";
+}
+
+/* ===================== Badges (tab counts) ===================== */
+function updateTabBadges(){
+  const p = getProject();
+  const issues = p?.issues || [];
+  const total = issues.length;
+  const open = issues.filter(i=>i.status==="open").length;
+  const due = issues.filter(i=>isDueToday(i) || isOverdue(i)).length;
+  const areas = new Set(issues.map(i => ((i.location||"Unspecified area").trim()||"Unspecified area"))).size;
+
+  $("bTotal").textContent = String(total);
+  $("bOpen").textContent = String(open);
+  $("bDue").textContent = String(due);
+  $("bAreas").textContent = String(areas);
+
+  $("bDue").classList.toggle("red", due>0);
+}
+
+/* ===================== Dashboard ===================== */
 async function renderDashboard(){
   const p = getProject();
+  updateTabBadges();
+
+  $("dashTitleHint").textContent = p ? (p.title || "") : "Select a project";
+
   const grid = $("dashGrid");
   const note = $("dashNote");
   const dueList = $("dueList");
@@ -1013,7 +1250,6 @@ async function renderDashboard(){
     note.textContent = "Select a project to see dashboard stats.";
     dueHint.textContent = "Select a project to see due items.";
     areaHint.textContent = "Select a project to see area grouping.";
-    // clear charts
     drawDonut($("chartStatus"), [{label:"Open",value:0},{label:"Closed",value:0}], "Total");
     drawBars($("chartSeverity"), [{label:"Low",value:0},{label:"Med",value:0},{label:"High",value:0}]);
     return;
@@ -1029,7 +1265,6 @@ async function renderDashboard(){
   const med  = issues.filter(i=>i.severity==="medium").length;
   const low  = issues.filter(i=>i.severity==="low").length;
 
-  // Photo count total
   let photosTotal = 0;
   for(const i of issues){
     const ph = await dbGetPhotosByIssueId(i.id);
@@ -1051,13 +1286,11 @@ async function renderDashboard(){
     grid.appendChild(el);
   }
 
-  // Charts
   drawDonut($("chartStatus"), [{label:"Open",value:open},{label:"Closed",value:closed}], "Total");
   drawBars($("chartSeverity"), [{label:"Low",value:low},{label:"Med",value:med},{label:"High",value:high}]);
 
   note.textContent = "Use quick export buttons to generate section-specific PDFs instantly.";
 
-  // Due today / overdue list
   const dueItems = issues
     .filter(i => isDueToday(i) || isOverdue(i))
     .sort((a,b)=>{
@@ -1070,7 +1303,7 @@ async function renderDashboard(){
     dueHint.textContent = "No due today or overdue open issues.";
   }else{
     dueHint.textContent = `${dueItems.length} issue(s) due today or overdue.`;
-    for(const i of dueItems.slice(0, 60)){
+    for(const i of dueItems.slice(0, 40)){
       const el = document.createElement("div");
       el.className = "dueItem";
       const tag = isOverdue(i) ? "Overdue" : "Due today";
@@ -1078,7 +1311,7 @@ async function renderDashboard(){
         <div class="line1">${safe(i.code)} • ${safe(i.title||"Untitled")} <span class="pill ${isOverdue(i)?"overdue":""}" style="margin-left:8px;">${tag}</span></div>
         <div class="line2">${safe(i.location||"Unspecified area")} • Assignee: ${safe(i.assignee||"-")} • Due: ${safe(i.dueDate||"-")}</div>
       `;
-      el.onclick = () => { state.selectedIssueId = i.id; renderIssues(); renderIssueDetail(); };
+      el.onclick = () => { state.selectedIssueId = i.id; setScreen("issues"); renderIssues(); renderIssueDetail(); };
       dueList.appendChild(el);
     }
   }
@@ -1095,8 +1328,8 @@ async function renderDashboard(){
   if(locs.length === 0){
     areaHint.textContent = "No issues yet.";
   }else{
-    areaHint.textContent = `${locs.length} area(s) found. Tap Export on a row for an area-only PDF.`;
-    for(const loc of locs){
+    areaHint.textContent = `${locs.length} area(s). Tap “Open Areas” for the Area screen.`;
+    for(const loc of locs.slice(0, 8)){
       const arr = byLoc.get(loc);
       const openN = arr.filter(i=>i.status==="open").length;
       const closedN = arr.filter(i=>i.status==="closed").length;
@@ -1116,76 +1349,33 @@ async function renderDashboard(){
         </div>
         <div class="btns">
           <button class="ghost" data-exp-area="${safe(loc)}" type="button">Export</button>
-          <button class="ghost" data-view-area="${safe(loc)}" type="button">View</button>
+          <button class="ghost" data-open-area="${safe(loc)}" type="button">Open</button>
         </div>
       `;
       areaGroups.appendChild(row);
     }
 
-    areaGroups.querySelectorAll("[data-view-area]").forEach(b=>{
+    areaGroups.querySelectorAll("[data-open-area]").forEach(b=>{
       b.onclick = (e)=>{
         e.stopPropagation();
-        const loc = b.getAttribute("data-view-area");
-        // Set a search filter to that area
-        $("issueSearch").value = loc;
-        $("issueFilter").value = "all";
-        renderIssues();
-        toast("Filtered to area");
+        const loc = b.getAttribute("data-open-area");
+        openAreaModal(loc);
       };
     });
-
     areaGroups.querySelectorAll("[data-exp-area]").forEach(b=>{
       b.onclick = async (e)=>{
         e.stopPropagation();
         const loc = b.getAttribute("data-exp-area");
-        await exportPdf({ mode:"area", area:loc });
+        await exportPdf({ mode:"area", area:loc, template:getTemplate() });
       };
     });
   }
 }
 
-/* ===================== Render ===================== */
-function renderProjects(){
-  const list = $("projectList");
-  list.innerHTML = "";
-  if(state.projects.length === 0){
-    list.innerHTML = `<div class="tiny">No projects yet. Click “New Project”.</div>`;
-  }
-  for(const p of state.projects){
-    const issuesCount = (p.issues||[]).length;
-    const el = document.createElement("div");
-    el.className = "item" + (p.id === state.selectedProjectId ? " active" : "");
-    el.innerHTML = `
-      <div class="title">${safe(p.title || "Untitled Project")}</div>
-      <div class="meta">
-        <span class="pill">${safe(p.reference || "No ref")}</span>
-        <span class="pill">${safe(p.client || "No client")}</span>
-        <span class="pill">${issuesCount} issue${issuesCount===1?"":"s"}</span>
-      </div>`;
-    el.onclick = async () => {
-      state.selectedProjectId = p.id;
-      state.selectedIssueId = null;
-      render();
-      await loadSignatureIntoCanvas();
-    };
-    list.appendChild(el);
-  }
-
-  const proj = getProject();
-  $("btnNewIssue").disabled = !proj;
-  $("btnExport").disabled = !proj;
-  $("btnShare").disabled  = !proj;
-  $("btnSaveProject").disabled = !proj;
-  $("btnDeleteProject").disabled = !proj;
-
-  $("pTitle").value = proj?.title || "";
-  $("pRef").value = proj?.reference || "";
-  $("pClient").value = proj?.client || "";
-  $("pNotes").value = proj?.notes || "";
-}
-
+/* ===================== Issues ===================== */
 function renderIssues(){
   const proj = getProject();
+  updateTabBadges();
   const list = $("issueList");
   list.innerHTML = "";
   if(!proj){
@@ -1243,20 +1433,19 @@ function renderIssues(){
 async function renderIssueDetail(){
   const proj = getProject();
   const issue = getIssue();
+
   if(!proj){
     $("issueForm").style.display = "none";
-    $("issueHint").style.display = "block";
     $("issueHint").textContent = "Select a project, then create an issue.";
     return;
   }
   if(!issue){
     $("issueForm").style.display = "none";
-    $("issueHint").style.display = "block";
     $("issueHint").textContent = "Create an issue, or tap one to edit.";
     return;
   }
 
-  $("issueHint").style.display = "none";
+  $("issueHint").textContent = "";
   $("issueForm").style.display = "block";
 
   $("iCode").value = issue.code || "";
@@ -1270,6 +1459,8 @@ async function renderIssueDetail(){
 
   await renderPhotos(issue.id);
   await renderDashboard();
+  await renderAreas(false);
+  await renderToday(false);
 }
 
 async function renderPhotos(issueId){
@@ -1315,6 +1506,8 @@ async function renderPhotos(issueId){
       await dbDelete("photos", id);
       await renderPhotos(issueId);
       await renderDashboard();
+      await renderAreas(false);
+      await renderToday(false);
       toast("Photo removed");
     };
   });
@@ -1326,19 +1519,204 @@ async function renderPhotos(issueId){
   });
 }
 
-function render(){
-  renderProjects();
-  renderIssues();
-  renderIssueDetail();
-  renderDashboard();
+/* ===================== Areas Screen + Area View ===================== */
+function buildAreasMap(issues){
+  const by = new Map();
+  for(const i of issues){
+    const loc = (i.location || "Unspecified area").trim() || "Unspecified area";
+    if(!by.has(loc)) by.set(loc, []);
+    by.get(loc).push(i);
+  }
+  return by;
 }
+
+async function renderAreas(updateBadges=true){
+  const p = getProject();
+  if(updateBadges) updateTabBadges();
+
+  const cards = $("areaCards");
+  const hint = $("areasHint");
+  cards.innerHTML = "";
+
+  if(!p){
+    hint.textContent = "Select a project to see areas.";
+    return;
+  }
+
+  const q = ($("areaSearch").value || "").trim().toLowerCase();
+  const issues = p.issues || [];
+  const by = buildAreasMap(issues);
+  let locs = Array.from(by.keys()).sort((a,b)=>a.localeCompare(b));
+  if(q) locs = locs.filter(a => a.toLowerCase().includes(q));
+
+  hint.textContent = `${locs.length} area(s) found.`;
+
+  if(locs.length === 0){
+    cards.innerHTML = `<div class="tiny">No areas. Add a location to issues.</div>`;
+    return;
+  }
+
+  for(const loc of locs){
+    const arr = by.get(loc);
+    const openN = arr.filter(i=>i.status==="open").length;
+    const closedN = arr.filter(i=>i.status==="closed").length;
+    const overdueN = arr.filter(i=>isOverdue(i)).length;
+
+    const el = document.createElement("div");
+    el.className = "areaCard";
+    el.innerHTML = `
+      <div class="h">
+        <div class="name">${safe(loc)}</div>
+        <span class="pill">${arr.length}</span>
+      </div>
+      <div class="nums">
+        <span class="pill open">${openN} open</span>
+        <span class="pill closed">${closedN} closed</span>
+        ${overdueN>0 ? `<span class="pill overdue">${overdueN} overdue</span>` : ``}
+      </div>
+      <div class="tiny" style="margin-top:10px;">Tap to open Area View • Export available inside</div>
+    `;
+    el.onclick = () => openAreaModal(loc);
+    cards.appendChild(el);
+  }
+}
+
+$("areaSearch").addEventListener("input", () => {
+  clearTimeout(window.__areas);
+  window.__areas = setTimeout(() => renderAreas(), 120);
+});
+
+$("btnAreasExportAll").onclick = async () => {
+  if(!getProject()){ toast("Select a project first"); return; }
+  await exportPdf({ mode:"all", template:getTemplate() });
+};
+
+function openAreaModal(area){
+  state.areaModalArea = area;
+  $("areaModalTitle").textContent = `Area View — ${area}`;
+  $("areaBackdrop").classList.add("show");
+  renderAreaModalList();
+}
+$("btnAreaClose").onclick = () => $("areaBackdrop").classList.remove("show");
+$("btnAreaExport").onclick = async () => {
+  const area = state.areaModalArea;
+  if(!area) return;
+  await exportPdf({ mode:"area", area, template:getTemplate() });
+};
+$("btnAreaOpenIssues").onclick = () => {
+  const area = state.areaModalArea;
+  $("areaBackdrop").classList.remove("show");
+  setScreen("issues");
+  $("issueFilter").value = "all";
+  $("issueSearch").value = area || "";
+  renderIssues();
+  toast("Filtered to area");
+};
+
+function renderAreaModalList(){
+  const p = getProject();
+  const area = state.areaModalArea;
+  const list = $("areaIssueList");
+  const stats = $("areaStats");
+  list.innerHTML = "";
+  if(!p || !area) return;
+
+  const issues = (p.issues||[]).filter(i => ((i.location||"Unspecified area").trim()||"Unspecified area") === area);
+  const openN = issues.filter(i=>i.status==="open").length;
+  const closedN = issues.filter(i=>i.status==="closed").length;
+  const overdueN = issues.filter(i=>isOverdue(i)).length;
+
+  stats.textContent = `${issues.length} total • ${openN} open • ${closedN} closed${overdueN?` • ${overdueN} overdue`:``}`;
+
+  if(issues.length === 0){
+    list.innerHTML = `<div class="tiny">No issues in this area.</div>`;
+    return;
+  }
+  issues.sort((a,b)=> (a.code||"").localeCompare(b.code||""));
+
+  for(const i of issues){
+    const el = document.createElement("div");
+    el.className = "item";
+    const statusClass = i.status === "closed" ? "pill closed" : "pill open";
+    el.innerHTML = `
+      <div class="title">${safe(i.code)} • ${safe(i.title||"Untitled")}</div>
+      <div class="meta">
+        <span class="${statusClass}">${safe(i.status||"open")}</span>
+        ${i.severity === "high" ? `<span class="pill high">high</span>` : `<span class="pill">${safe(i.severity||"medium")}</span>`}
+        ${i.dueDate ? `<span class="pill ${isOverdue(i)?"overdue":""}">Due: ${safe(new Date(i.dueDate).toLocaleDateString())}</span>` : ``}
+        ${i.assignee ? `<span class="pill">Assignee: ${safe(i.assignee)}</span>` : ``}
+      </div>
+    `;
+    el.onclick = () => {
+      $("areaBackdrop").classList.remove("show");
+      state.selectedIssueId = i.id;
+      setScreen("issues");
+      renderIssues();
+      renderIssueDetail();
+    };
+    list.appendChild(el);
+  }
+}
+
+/* ===================== Today Screen ===================== */
+async function renderToday(updateBadges=true){
+  const p = getProject();
+  if(updateBadges) updateTabBadges();
+
+  const list = $("todayList");
+  const hint = $("todayHint");
+  list.innerHTML = "";
+
+  if(!p){
+    hint.textContent = "Select a project to see today’s due items.";
+    return;
+  }
+
+  const assQ = ($("todayAssignee").value || "").trim().toLowerCase();
+  let items = (p.issues||[]).filter(i => isDueToday(i) || isOverdue(i));
+  if(assQ){
+    items = items.filter(i => (i.assignee||"").toLowerCase().includes(assQ));
+  }
+  items.sort((a,b)=>{
+    const da = a.dueDate || "9999-12-31";
+    const db = b.dueDate || "9999-12-31";
+    return da.localeCompare(db) || (a.code||"").localeCompare(b.code||"");
+  });
+
+  if(items.length === 0){
+    hint.textContent = assQ ? "No due items for this assignee." : "No due today or overdue open issues.";
+    return;
+  }
+
+  hint.textContent = `${items.length} due item(s). Tap one to open the issue.`;
+  for(const i of items.slice(0, 80)){
+    const el = document.createElement("div");
+    el.className = "dueItem";
+    const tag = isOverdue(i) ? "Overdue" : "Due today";
+    el.innerHTML = `
+      <div class="line1">${safe(i.code)} • ${safe(i.title||"Untitled")} <span class="pill ${isOverdue(i)?"overdue":""}" style="margin-left:8px;">${tag}</span></div>
+      <div class="line2">${safe(i.location||"Unspecified area")} • Assignee: ${safe(i.assignee||"-")} • Due: ${safe(i.dueDate||"-")}</div>
+    `;
+    el.onclick = () => {
+      state.selectedIssueId = i.id;
+      setScreen("issues");
+      renderIssues();
+      renderIssueDetail();
+    };
+    list.appendChild(el);
+  }
+}
+
+$("todayAssignee").addEventListener("input", () => {
+  clearTimeout(window.__today);
+  window.__today = setTimeout(() => renderToday(), 120);
+});
+$("btnTodayExportDue").onclick = async () => {
+  if(!getProject()){ toast("Select a project first"); return; }
+  await exportPdf({ mode:"due", template:getTemplate() });
+};
 
 /* ===================== CRUD Projects / Issues ===================== */
-async function saveProject(proj){
-  await dbPut("projects", proj);
-  state.projects = await dbGetAllProjects();
-}
-
 $("btnNewProject").onclick = async () => {
   const p = {
     id: uid(),
@@ -1354,7 +1732,7 @@ $("btnNewProject").onclick = async () => {
   await saveProject(p);
   state.selectedProjectId = p.id;
   state.selectedIssueId = null;
-  render();
+  renderAll();
   await loadSignatureIntoCanvas();
   toast("Project created");
 };
@@ -1369,7 +1747,7 @@ $("btnSaveProject").onclick = async () => {
   p.updatedAt = new Date().toISOString();
   await saveProject(p);
   renderProjects();
-  await renderDashboard();
+  renderDashboard();
   toast("Project saved");
 };
 
@@ -1388,7 +1766,7 @@ $("btnDeleteProject").onclick = async () => {
   state.projects = await dbGetAllProjects();
   state.selectedProjectId = state.projects[0]?.id || null;
   state.selectedIssueId = null;
-  render();
+  renderAll();
   await loadSignatureIntoCanvas();
   toast("Project deleted");
 };
@@ -1420,6 +1798,7 @@ $("btnNewIssue").onclick = async () => {
   await saveProject(p);
 
   state.selectedIssueId = issue.id;
+  setScreen("issues");
   renderIssues();
   await renderIssueDetail();
   toast(`Issue created (${code})`);
@@ -1442,7 +1821,9 @@ $("btnSaveIssue").onclick = async () => {
   p.updatedAt = new Date().toISOString();
   await saveProject(p);
   renderIssues();
-  await renderDashboard();
+  renderDashboard();
+  renderAreas();
+  renderToday();
   toast("Issue saved");
 };
 
@@ -1460,10 +1841,12 @@ $("btnDeleteIssue").onclick = async () => {
   state.selectedIssueId = null;
   renderIssues();
   await renderIssueDetail();
+  renderDashboard();
+  renderAreas();
+  renderToday();
   toast("Issue deleted");
 };
 
-/* ===================== Photos (with auto numbering) ===================== */
 async function nextPhotoNumber(issueId){
   const p = getProject();
   if(!p) return 1;
@@ -1501,6 +1884,8 @@ $("iPhotoInput").addEventListener("change", async (e) => {
   e.target.value = "";
   await renderPhotos(issue.id);
   await renderDashboard();
+  await renderAreas();
+  await renderToday();
   toast(files.length === 1 ? "Photo added" : `${files.length} photos added`);
 });
 $("btnQuickCapture").onclick = () => $("iPhotoInput").click();
@@ -1612,6 +1997,8 @@ $("btnSnap").onclick = async () => {
   await dbPut("photos", rec);
   await renderPhotos(issue.id);
   await renderDashboard();
+  await renderAreas();
+  await renderToday();
   toast("Photo captured");
 };
 
@@ -1897,7 +2284,7 @@ async function loadSignatureIntoCanvas(){
   img.src = rec.dataUrl;
 }
 
-/* ===================== PDF Export (filters + square photos + numbering) ===================== */
+/* ===================== PDF Export (templates) ===================== */
 function safeFile(s){ return String(s||"Report").replace(/[^a-z0-9-_]+/gi,"_").slice(0,60); }
 function extractPins(photoRec){
   const pins = (photoRec.annotations||[]).filter(a=>a.type==="pin").map(p=>({ num:p.num||0, label:p.label||"" }));
@@ -1982,7 +2369,7 @@ async function renderAnnotatedSquareToDataUrl(photoRec){
   return sq.toDataURL("image/jpeg", 0.9);
 }
 
-async function addPdfHeader(doc){
+async function addPdfHeader(doc, template){
   const pageW = doc.internal.pageSize.getWidth();
   const leftX = 46, topY = 24;
 
@@ -1994,6 +2381,16 @@ async function addPdfHeader(doc){
     const sb = await fetchAsDataUrl("logo.png");
     doc.addImage(sb, "PNG", pageW-46-140, topY, 140, 40);
   }catch(_){}
+
+  // INTERNAL badge
+  if(template === "internal"){
+    doc.setFillColor(176,0,32);
+    doc.roundedRect(pageW-46-140, topY+44, 140, 22, 8, 8, "F");
+    doc.setTextColor(255,255,255);
+    doc.setFont("helvetica","bold"); doc.setFontSize(10);
+    doc.text("INTERNAL", pageW-46-70, topY+59, { align:"center" });
+    doc.setTextColor(0,0,0);
+  }
 }
 
 function filterIssues(p, opts){
@@ -2015,6 +2412,7 @@ async function drawReport(doc, p, opts){
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const contentW = pageW - margin*2;
+  const template = opts.template || "client";
 
   function redFrame(){
     doc.setDrawColor(176,0,32);
@@ -2031,7 +2429,7 @@ async function drawReport(doc, p, opts){
     "";
 
   // Cover
-  redFrame(); await addPdfHeader(doc);
+  redFrame(); await addPdfHeader(doc, template);
   doc.setFont("helvetica","bold"); doc.setFontSize(22);
   doc.text((p.title || "Site Buddy Report") + suffix, margin+16, 110, { maxWidth: contentW-32 });
   doc.setFont("helvetica","normal"); doc.setFontSize(11);
@@ -2039,9 +2437,14 @@ async function drawReport(doc, p, opts){
   doc.text(`Client: ${p.client || "-"}`, margin+16, 162);
   doc.text(`Generated: ${new Date().toLocaleString()}`, margin+16, 178);
   doc.text(`Included issues: ${issues.length}`, margin+16, 194);
+  if(template === "internal"){
+    doc.setTextColor(102,112,133);
+    doc.text(`Template: INTERNAL (includes internal-only badge)`, margin+16, 210);
+    doc.setTextColor(0,0,0);
+  }
 
   // Summary
-  doc.addPage(); redFrame(); await addPdfHeader(doc);
+  doc.addPage(); redFrame(); await addPdfHeader(doc, template);
   const openCount = issues.filter(i=>i.status==="open").length;
   const closedCount = issues.filter(i=>i.status==="closed").length;
   const overdueCount = issues.filter(i=>isOverdue(i)).length;
@@ -2086,7 +2489,7 @@ async function drawReport(doc, p, opts){
     ]){
       if(block.items.length === 0) continue;
 
-      doc.addPage(); redFrame(); await addPdfHeader(doc);
+      doc.addPage(); redFrame(); await addPdfHeader(doc, template);
       doc.setFont("helvetica","bold"); doc.setFontSize(16);
       doc.text(loc, margin+16, 110);
       doc.setFontSize(12);
@@ -2106,7 +2509,7 @@ async function drawReport(doc, p, opts){
 
         const needed = (lines1.length+lines2.length+lines3.length)*14 + 18;
         if(y + needed > pageH - margin - 40){
-          doc.addPage(); redFrame(); await addPdfHeader(doc);
+          doc.addPage(); redFrame(); await addPdfHeader(doc, template);
           y = 110;
         }
 
@@ -2120,7 +2523,7 @@ async function drawReport(doc, p, opts){
         photos.sort((a,b)=> (a.photoNo||9999) - (b.photoNo||9999));
         for(const ph of photos){
           const photoNo = ph.photoNo || 1;
-          doc.addPage(); redFrame(); await addPdfHeader(doc);
+          doc.addPage(); redFrame(); await addPdfHeader(doc, template);
           doc.setFont("helvetica","bold"); doc.setFontSize(14);
           doc.text(`${issue.code||""} • ${issue.title||"Issue"} — ${photoLabel(photoNo)}`, margin+16, 110);
 
@@ -2157,7 +2560,7 @@ async function drawReport(doc, p, opts){
   }
 }
 
-async function exportPdf(opts={mode:"all"}){
+async function exportPdf(opts={mode:"all", template:"client"}){
   const p = getProject();
   if(!p){ toast("Select a project first"); return; }
   const { jsPDF } = window.jspdf;
@@ -2171,7 +2574,8 @@ async function exportPdf(opts={mode:"all"}){
     opts.mode === "area" ? `_Area_${safeFile(opts.area||"")}` :
     "";
 
-  doc.save(`SiteBuddy_${safeFile(p.title || "Report")}${extra}.pdf`);
+  const tmpl = opts.template === "internal" ? "_INTERNAL" : "_CLIENT";
+  doc.save(`SiteBuddy_${safeFile(p.title || "Report")}${extra}${tmpl}.pdf`);
   toast("PDF exported");
 }
 
@@ -2182,13 +2586,13 @@ async function buildPdfBlob(project, opts){
   return doc.output("blob");
 }
 
-$("btnExport").onclick = () => exportPdf({mode:"all"});
+$("btnExport").onclick = () => exportPdf({mode:"all", template:getTemplate()});
 $("btnShare").onclick = async () => {
   const p = getProject();
   if(!p){ toast("Select a project first"); return; }
   try{
-    const blob = await buildPdfBlob(p, {mode:"all"});
-    const name = `SiteBuddy_${safeFile(p.title || "Report")}.pdf`;
+    const blob = await buildPdfBlob(p, {mode:"all", template:getTemplate()});
+    const name = `SiteBuddy_${safeFile(p.title || "Report")}_${getTemplate()==="internal"?"INTERNAL":"CLIENT"}.pdf`;
     const file = new File([blob], name, { type:"application/pdf" });
 
     if(navigator.canShare && navigator.canShare({ files:[file] })){
@@ -2210,10 +2614,13 @@ $("btnShare").onclick = async () => {
 };
 
 /* Quick export buttons */
-$("btnExportOpen").onclick = async ()=> exportPdf({mode:"open"});
-$("btnExportClosed").onclick = async ()=> exportPdf({mode:"closed"});
-$("btnExportDue").onclick = async ()=> exportPdf({mode:"due"});
-$("btnExportByArea").onclick = async ()=> exportPdf({mode:"all"}); // includes grouped by area in report
+$("btnExportOpen").onclick = async ()=> exportPdf({mode:"open", template:getTemplate()});
+$("btnExportClosed").onclick = async ()=> exportPdf({mode:"closed", template:getTemplate()});
+$("btnExportAll").onclick = async ()=> exportPdf({mode:"all", template:getTemplate()});
+$("btnExportDue").onclick = async ()=> exportPdf({mode:"due", template:getTemplate()});
+
+$("btnIssuesExportOpen").onclick = async ()=> exportPdf({mode:"open", template:getTemplate()});
+$("btnIssuesExportClosed").onclick = async ()=> exportPdf({mode:"closed", template:getTemplate()});
 
 /* ===================== PWA install + SW ===================== */
 let deferredPrompt = null;
@@ -2264,20 +2671,35 @@ $("btnReset").onclick = async () => {
   state.companyLogoDataUrl = null;
   renderBrandPreview();
 
-  render();
+  renderAll();
   clearSig();
   toast("Reset complete");
 };
 
 /* ===================== Inputs ===================== */
 ["pTitle","pRef","pClient","pNotes"].forEach(id => $(id).addEventListener("input", () => $("btnSaveProject").disabled = !getProject()));
-$("issueFilter").addEventListener("change", () => { renderIssues(); renderDashboard(); });
+$("issueFilter").addEventListener("change", () => { renderIssues(); });
 $("issueSearch").addEventListener("input", () => {
   clearTimeout(window.__q);
-  window.__q = setTimeout(() => { renderIssues(); renderDashboard(); }, 120);
+  window.__q = setTimeout(() => { renderIssues(); }, 120);
 });
 
-/* ===================== Init ===================== */
+/* ===================== Photos removed URL cleanup on unload ===================== */
+window.addEventListener("beforeunload", () => {
+  for(const [, url] of state.photoUrlCache.entries()) try{ URL.revokeObjectURL(url); }catch(_){}
+});
+
+/* ===================== Init / RenderAll ===================== */
+function renderAll(){
+  renderProjects();
+  renderDashboard();
+  renderIssues();
+  renderIssueDetail();
+  renderAreas();
+  renderToday();
+  updateTabBadges();
+}
+
 async function init(){
   state.projects = await dbGetAllProjects();
   if(!state.selectedProjectId && state.projects.length) state.selectedProjectId = state.projects[0].id;
@@ -2287,7 +2709,7 @@ async function init(){
   renderBrandPreview();
 
   clearSig();
-  render();
+  renderAll();
   await loadSignatureIntoCanvas();
 }
 init();
