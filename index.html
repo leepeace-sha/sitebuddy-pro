@@ -25,7 +25,6 @@
       --danger:#b00020;
       --ok:#0f766e;
       --chip:#f8fafc;
-      --glass: rgba(255,255,255,.72);
     }
 
     *{box-sizing:border-box}
@@ -331,12 +330,22 @@
     .brandPreview img{width:100%; height:100%; object-fit:contain}
 
     /* DASHBOARD */
+    .dashLayout{
+      display:grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap:10px;
+      align-items:start;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 980px){ .dashLayout{grid-template-columns:1fr;} }
+
     .dashGrid{
       display:grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap:10px;
     }
     @media (max-width: 980px){ .dashGrid{grid-template-columns: repeat(2, minmax(0, 1fr));} }
+
     .dashTile{
       border:1px solid rgba(16,24,40,.12);
       border-radius: 16px;
@@ -350,6 +359,65 @@
     .dashTile .s{font-size:11px; margin-top:6px; color:var(--muted);}
     .dashTile.red{border-left:5px solid var(--border);}
     .dashTile.green{border-left:5px solid var(--ok);}
+
+    .panel{
+      border:1px solid rgba(16,24,40,.12);
+      border-radius: 16px;
+      padding:10px;
+      background:#fff;
+      box-shadow: 0 10px 24px rgba(16,24,40,.06);
+    }
+    .panelHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .panelHead .t{font-weight:950; font-size:12px;}
+    .panelHead .a{display:flex; gap:8px; flex-wrap:wrap;}
+
+    .chartRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    @media (max-width: 980px){ .chartRow{grid-template-columns:1fr;} }
+
+    .chartBox{
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding:10px;
+      background: rgba(176,0,32,.02);
+    }
+    .chartTitle{font-size:12px; font-weight:950; margin-bottom:8px;}
+    .chartCanvas{width:100%; height:180px; display:block; border-radius: 14px; background:#fff; border:1px solid rgba(16,24,40,.08);}
+
+    .groupList{display:flex; flex-direction:column; gap:8px;}
+    .groupRow{
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding:10px;
+      background:#fff;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .groupRow .name{font-weight:950; font-size:12px;}
+    .groupRow .stats{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px;}
+    .groupRow .stats .pill{font-size:11px}
+    .groupRow .btns{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+
+    .dueList{display:flex; flex-direction:column; gap:8px; max-height:220px; overflow:auto;}
+    .dueItem{
+      border:1px solid rgba(16,24,40,.10);
+      border-radius: 16px;
+      padding:10px;
+      background:#fff;
+    }
+    .dueItem .line1{font-weight:950; font-size:12px;}
+    .dueItem .line2{font-size:11px; color:var(--muted); margin-top:6px;}
 
     @media (prefers-reduced-motion: reduce){
       *{animation:none !important; transition:none !important;}
@@ -433,10 +501,54 @@
       <!-- DASHBOARD OVERVIEW -->
       <div id="dashboard" style="margin-bottom:12px;">
         <div class="dashGrid" id="dashGrid"></div>
-        <div class="tiny" id="dashNote" style="margin-top:8px;"></div>
+
+        <div class="dashLayout" style="margin-top:10px;">
+          <div class="panel">
+            <div class="panelHead">
+              <div class="t">Charts</div>
+              <div class="a">
+                <button class="ghost" id="btnExportOpen" type="button">Export Open</button>
+                <button class="ghost" id="btnExportClosed" type="button">Export Closed</button>
+              </div>
+            </div>
+            <div class="chartRow">
+              <div class="chartBox">
+                <div class="chartTitle">Status (Open vs Closed)</div>
+                <canvas id="chartStatus" class="chartCanvas" width="800" height="360"></canvas>
+              </div>
+              <div class="chartBox">
+                <div class="chartTitle">Severity (Low / Medium / High)</div>
+                <canvas id="chartSeverity" class="chartCanvas" width="800" height="360"></canvas>
+              </div>
+            </div>
+            <div class="tiny" id="dashNote" style="margin-top:10px;"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panelHead">
+              <div class="t">Due today / overdue</div>
+              <div class="a">
+                <button class="ghost" id="btnExportDue" type="button">Export Due</button>
+              </div>
+            </div>
+            <div class="dueList" id="dueList"></div>
+            <div class="tiny" id="dueHint" style="margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:10px;">
+          <div class="panelHead">
+            <div class="t">Grouped by area</div>
+            <div class="a">
+              <button class="ghost" id="btnExportByArea" type="button">Export All Areas</button>
+            </div>
+          </div>
+          <div class="groupList" id="areaGroups"></div>
+          <div class="tiny" id="areaHint" style="margin-top:8px;"></div>
+        </div>
       </div>
 
-      <div class="split">
+      <div class="split" style="margin-top:10px;">
         <div>
           <div class="row">
             <div>
@@ -533,7 +645,7 @@
       </div>
 
       <div class="hr"></div>
-      <p class="tiny">Pins: open a photo → Annotate → choose Pin tool → tap to place 1,2,3… and label → PDF auto legend.</p>
+      <p class="tiny">Pins: open a photo → Annotate → Pin tool → tap to place 1,2,3… and label → PDF auto legend.</p>
     </section>
   </div>
 </main>
@@ -590,7 +702,7 @@
 
 <script>
 /* ===================== IndexedDB ===================== */
-const DB_NAME = "sitebuddy_db_v6";
+const DB_NAME = "sitebuddy_db_v7";
 const DB_VER  = 1;
 
 function openDB(){
@@ -692,6 +804,13 @@ function safe(s){ return String(s||"").replace(/[&<>"']/g, m => ({'&':'&amp;','<
 function pad3(n){ return String(n).padStart(3, "0"); }
 function issueCode(n){ return `SB-${pad3(n)}`; }
 function photoLabel(n){ return `Photo ${n}`; }
+function todayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${dd}`;
+}
 
 function isOverdue(issue){
   if(!issue?.dueDate) return false;
@@ -699,6 +818,11 @@ function isOverdue(issue){
   const today = new Date(); today.setHours(0,0,0,0);
   const d = new Date(issue.dueDate + "T00:00:00");
   return d < today;
+}
+function isDueToday(issue){
+  if(!issue?.dueDate) return false;
+  if(issue.status === "closed") return false;
+  return issue.dueDate === todayISO();
 }
 
 async function blobToImage(blob){
@@ -775,14 +899,123 @@ $("btnClearCompanyLogo").onclick = async () => {
   toast("Company logo cleared");
 };
 
+/* ===================== Charts (Canvas) ===================== */
+function clearCanvas(c){
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0,0,c.width,c.height);
+  return ctx;
+}
+function drawDonut(canvas, parts, title){
+  const ctx = clearCanvas(canvas);
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2 + 10;
+  const r = Math.min(W,H)*0.32;
+  const total = parts.reduce((s,p)=>s+p.value,0) || 1;
+
+  // ring background
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.strokeStyle = "rgba(16,24,40,.08)";
+  ctx.lineWidth = r*0.45;
+  ctx.stroke();
+
+  // segments (no fixed colors? -> use safe neutral / red / dark)
+  const segColors = ["#b00020", "#101828", "#667085", "#0f766e"];
+  let a = -Math.PI/2;
+  parts.forEach((p, idx) => {
+    const ang = (p.value/total) * Math.PI*2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, a, a+ang);
+    ctx.strokeStyle = segColors[idx % segColors.length];
+    ctx.lineWidth = r*0.45;
+    ctx.lineCap = "butt";
+    ctx.stroke();
+    a += ang;
+  });
+
+  // center text
+  ctx.fillStyle = "#101828";
+  ctx.font = "900 26px ui-sans-serif, system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(String(parts.reduce((s,p)=>s+p.value,0)), cx, cy);
+
+  ctx.font = "700 12px ui-sans-serif, system-ui";
+  ctx.fillStyle = "#667085";
+  ctx.fillText(title || "", cx, cy + 26);
+
+  // legend
+  let lx = 18, ly = 22;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = "800 12px ui-sans-serif, system-ui";
+  parts.forEach((p, idx) => {
+    ctx.fillStyle = segColors[idx % segColors.length];
+    ctx.fillRect(lx, ly-10, 10, 10);
+    ctx.fillStyle = "#101828";
+    ctx.fillText(`${p.label}: ${p.value}`, lx+16, ly);
+    ly += 18;
+  });
+}
+function drawBars(canvas, bars){
+  const ctx = clearCanvas(canvas);
+  const W = canvas.width, H = canvas.height;
+  const pad = 36;
+  const max = Math.max(...bars.map(b=>b.value), 1);
+  const bw = (W - pad*2) / bars.length * 0.66;
+  const gap = (W - pad*2) / bars.length * 0.34;
+
+  // axes
+  ctx.strokeStyle = "rgba(16,24,40,.10)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(pad, H-pad);
+  ctx.lineTo(W-pad, H-pad);
+  ctx.stroke();
+
+  const colors = ["#667085", "#101828", "#b00020"];
+  bars.forEach((b, i) => {
+    const x = pad + i*(bw+gap) + gap*0.5;
+    const h = (H - pad*2) * (b.value / max);
+    const y = (H - pad) - h;
+
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillRect(x, y, bw, h);
+
+    ctx.fillStyle = "#101828";
+    ctx.font = "900 14px ui-sans-serif, system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText(String(b.value), x + bw/2, y - 8);
+
+    ctx.fillStyle = "#667085";
+    ctx.font = "800 12px ui-sans-serif, system-ui";
+    ctx.fillText(b.label, x + bw/2, H - 14);
+  });
+}
+
 /* ===================== Dashboard Overview ===================== */
 async function renderDashboard(){
   const p = getProject();
   const grid = $("dashGrid");
   const note = $("dashNote");
+  const dueList = $("dueList");
+  const dueHint = $("dueHint");
+  const areaGroups = $("areaGroups");
+  const areaHint = $("areaHint");
+
   grid.innerHTML = "";
+  dueList.innerHTML = "";
+  areaGroups.innerHTML = "";
+
   if(!p){
     note.textContent = "Select a project to see dashboard stats.";
+    dueHint.textContent = "Select a project to see due items.";
+    areaHint.textContent = "Select a project to see area grouping.";
+    // clear charts
+    drawDonut($("chartStatus"), [{label:"Open",value:0},{label:"Closed",value:0}], "Total");
+    drawBars($("chartSeverity"), [{label:"Low",value:0},{label:"Med",value:0},{label:"High",value:0}]);
     return;
   }
 
@@ -791,9 +1024,12 @@ async function renderDashboard(){
   const open = issues.filter(i=>i.status==="open").length;
   const closed = issues.filter(i=>i.status==="closed").length;
   const overdue = issues.filter(i=>isOverdue(i)).length;
+  const dueToday = issues.filter(i=>isDueToday(i)).length;
   const high = issues.filter(i=>i.severity==="high").length;
+  const med  = issues.filter(i=>i.severity==="medium").length;
+  const low  = issues.filter(i=>i.severity==="low").length;
 
-  // Photo count (sum per issue)
+  // Photo count total
   let photosTotal = 0;
   for(const i of issues){
     const ph = await dbGetPhotosByIssueId(i.id);
@@ -805,18 +1041,107 @@ async function renderDashboard(){
     {k:"Open", v:String(open), s:"Action required", cls:"red"},
     {k:"Closed", v:String(closed), s:"Completed", cls:"green"},
     {k:"Overdue", v:String(overdue), s:"Open + past due date", cls: overdue>0 ? "red" : ""},
-    {k:"High severity", v:String(high), s:"Marked high", cls: high>0 ? "red" : ""},
+    {k:"Due today", v:String(dueToday), s:"Open issues due today", cls: dueToday>0 ? "red" : ""},
     {k:"Photos", v:String(photosTotal), s:"Attached to issues", cls:""},
   ];
-
-  // Show 6 tiles in a nice 4-col flow (CSS handles wrapping)
   for(const t of tiles){
     const el = document.createElement("div");
     el.className = `dashTile ${t.cls||""}`;
     el.innerHTML = `<div class="k">${safe(t.k)}</div><div class="v">${safe(t.v)}</div><div class="s">${safe(t.s)}</div>`;
     grid.appendChild(el);
   }
-  note.textContent = "Dashboard updates live as you add issues/photos.";
+
+  // Charts
+  drawDonut($("chartStatus"), [{label:"Open",value:open},{label:"Closed",value:closed}], "Total");
+  drawBars($("chartSeverity"), [{label:"Low",value:low},{label:"Med",value:med},{label:"High",value:high}]);
+
+  note.textContent = "Use quick export buttons to generate section-specific PDFs instantly.";
+
+  // Due today / overdue list
+  const dueItems = issues
+    .filter(i => isDueToday(i) || isOverdue(i))
+    .sort((a,b)=>{
+      const da = a.dueDate || "9999-12-31";
+      const db = b.dueDate || "9999-12-31";
+      return da.localeCompare(db) || (a.code||"").localeCompare(b.code||"");
+    });
+
+  if(dueItems.length === 0){
+    dueHint.textContent = "No due today or overdue open issues.";
+  }else{
+    dueHint.textContent = `${dueItems.length} issue(s) due today or overdue.`;
+    for(const i of dueItems.slice(0, 60)){
+      const el = document.createElement("div");
+      el.className = "dueItem";
+      const tag = isOverdue(i) ? "Overdue" : "Due today";
+      el.innerHTML = `
+        <div class="line1">${safe(i.code)} • ${safe(i.title||"Untitled")} <span class="pill ${isOverdue(i)?"overdue":""}" style="margin-left:8px;">${tag}</span></div>
+        <div class="line2">${safe(i.location||"Unspecified area")} • Assignee: ${safe(i.assignee||"-")} • Due: ${safe(i.dueDate||"-")}</div>
+      `;
+      el.onclick = () => { state.selectedIssueId = i.id; renderIssues(); renderIssueDetail(); };
+      dueList.appendChild(el);
+    }
+  }
+
+  // Grouped by area
+  const byLoc = new Map();
+  for(const i of issues){
+    const loc = (i.location || "Unspecified area").trim() || "Unspecified area";
+    if(!byLoc.has(loc)) byLoc.set(loc, []);
+    byLoc.get(loc).push(i);
+  }
+  const locs = Array.from(byLoc.keys()).sort((a,b)=>a.localeCompare(b));
+
+  if(locs.length === 0){
+    areaHint.textContent = "No issues yet.";
+  }else{
+    areaHint.textContent = `${locs.length} area(s) found. Tap Export on a row for an area-only PDF.`;
+    for(const loc of locs){
+      const arr = byLoc.get(loc);
+      const openN = arr.filter(i=>i.status==="open").length;
+      const closedN = arr.filter(i=>i.status==="closed").length;
+      const overdueN = arr.filter(i=>isOverdue(i)).length;
+
+      const row = document.createElement("div");
+      row.className = "groupRow";
+      row.innerHTML = `
+        <div>
+          <div class="name">${safe(loc)}</div>
+          <div class="stats">
+            <span class="pill">${arr.length} total</span>
+            <span class="pill open">${openN} open</span>
+            <span class="pill closed">${closedN} closed</span>
+            ${overdueN>0 ? `<span class="pill overdue">${overdueN} overdue</span>` : ``}
+          </div>
+        </div>
+        <div class="btns">
+          <button class="ghost" data-exp-area="${safe(loc)}" type="button">Export</button>
+          <button class="ghost" data-view-area="${safe(loc)}" type="button">View</button>
+        </div>
+      `;
+      areaGroups.appendChild(row);
+    }
+
+    areaGroups.querySelectorAll("[data-view-area]").forEach(b=>{
+      b.onclick = (e)=>{
+        e.stopPropagation();
+        const loc = b.getAttribute("data-view-area");
+        // Set a search filter to that area
+        $("issueSearch").value = loc;
+        $("issueFilter").value = "all";
+        renderIssues();
+        toast("Filtered to area");
+      };
+    });
+
+    areaGroups.querySelectorAll("[data-exp-area]").forEach(b=>{
+      b.onclick = async (e)=>{
+        e.stopPropagation();
+        const loc = b.getAttribute("data-exp-area");
+        await exportPdf({ mode:"area", area:loc });
+      };
+    });
+  }
 }
 
 /* ===================== Render ===================== */
@@ -893,6 +1218,7 @@ function renderIssues(){
     el.className = "item" + (i.id === state.selectedIssueId ? " active" : "");
     const statusClass = i.status === "closed" ? "pill closed" : "pill open";
     const overdue = isOverdue(i);
+    const dueToday = isDueToday(i);
     const due = i.dueDate ? new Date(i.dueDate).toLocaleDateString() : "";
     const ass = (i.assignee || "").trim();
 
@@ -903,7 +1229,7 @@ function renderIssues(){
         ${i.severity === "high" ? `<span class="pill high">high</span>` : `<span class="pill">${safe(i.severity||"medium")}</span>`}
         <span class="pill">${safe(i.location||"No location")}</span>
         ${ass ? `<span class="pill">Assignee: ${safe(ass)}</span>` : ``}
-        ${due ? `<span class="pill ${overdue ? "overdue":""}">Due: ${safe(due)}${overdue?" (Overdue)":""}</span>` : ``}
+        ${due ? `<span class="pill ${overdue ? "overdue":""}">Due: ${safe(due)}${overdue?" (Overdue)":(dueToday?" (Today)":"")}</span>` : ``}
       </div>`;
     el.onclick = async () => {
       state.selectedIssueId = i.id;
@@ -1084,7 +1410,7 @@ $("btnNewIssue").onclick = async () => {
     dueDate: "",
     location: "",
     notes: "",
-    photoCounter: 0,          // NEW: auto photo numbering
+    photoCounter: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -1163,7 +1489,7 @@ $("iPhotoInput").addEventListener("change", async (e) => {
     const rec = {
       id: uid(),
       issueId: issue.id,
-      photoNo: n,                    // NEW
+      photoNo: n,
       createdAt: new Date().toISOString(),
       blob,
       annotations: [],
@@ -1193,7 +1519,7 @@ $("btnCamSwitch").onclick = async () => {
   await openCamera(true);
 };
 
-async function openCamera(restart=false){
+async function openCamera(){
   $("camBackdrop").classList.add("show");
   const video = $("camVideo");
 
@@ -1276,7 +1602,7 @@ $("btnSnap").onclick = async () => {
   const rec = {
     id: uid(),
     issueId: issue.id,
-    photoNo: n,                    // NEW
+    photoNo: n,
     createdAt: new Date().toISOString(),
     blob: norm,
     annotations: [],
@@ -1571,7 +1897,7 @@ async function loadSignatureIntoCanvas(){
   img.src = rec.dataUrl;
 }
 
-/* ===================== PDF Export (SQUARE photos + numbering) ===================== */
+/* ===================== PDF Export (filters + square photos + numbering) ===================== */
 function safeFile(s){ return String(s||"Report").replace(/[^a-z0-9-_]+/gi,"_").slice(0,60); }
 function extractPins(photoRec){
   const pins = (photoRec.annotations||[]).filter(a=>a.type==="pin").map(p=>({ num:p.num||0, label:p.label||"" }));
@@ -1588,11 +1914,9 @@ async function fetchAsDataUrl(path){
   });
 }
 
-/* Render annotated image, then crop to SQUARE for PDF */
 async function renderAnnotatedSquareToDataUrl(photoRec){
   const img = await blobToImage(photoRec.blob);
 
-  // First: render annotations on a big canvas (keep good quality)
   const { canvas, ctx, w, h } = drawImageFit(img, 1800);
   ctx.fillStyle = "#ffffff"; ctx.fillRect(0,0,w,h);
   ctx.drawImage(img, 0,0,w,h);
@@ -1644,7 +1968,6 @@ async function renderAnnotatedSquareToDataUrl(photoRec){
   }
   ctx.restore();
 
-  // Second: crop to a centered square (professional PDF layout)
   const side = Math.min(w, h);
   const sx0 = Math.floor((w - side)/2);
   const sy0 = Math.floor((h - side)/2);
@@ -1673,7 +1996,21 @@ async function addPdfHeader(doc){
   }catch(_){}
 }
 
-async function drawReport(doc, p){
+function filterIssues(p, opts){
+  const issues = (p.issues||[]).slice();
+  if(!opts || opts.mode === "all") return issues;
+
+  if(opts.mode === "open") return issues.filter(i=>i.status==="open");
+  if(opts.mode === "closed") return issues.filter(i=>i.status==="closed");
+  if(opts.mode === "due") return issues.filter(i=>isDueToday(i) || isOverdue(i));
+  if(opts.mode === "area") {
+    const a = (opts.area||"").trim();
+    return issues.filter(i => ((i.location||"Unspecified area").trim()||"Unspecified area") === a);
+  }
+  return issues;
+}
+
+async function drawReport(doc, p, opts){
   const margin = 46;
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -1685,21 +2022,30 @@ async function drawReport(doc, p){
     doc.rect(margin, margin, contentW, pageH - margin*2);
   }
 
+  const issues = filterIssues(p, opts);
+  const suffix =
+    opts?.mode === "open" ? " (Open)" :
+    opts?.mode === "closed" ? " (Closed)" :
+    opts?.mode === "due" ? " (Due / Overdue)" :
+    opts?.mode === "area" ? ` (Area: ${opts.area})` :
+    "";
+
   // Cover
   redFrame(); await addPdfHeader(doc);
   doc.setFont("helvetica","bold"); doc.setFontSize(22);
-  doc.text(p.title || "Site Buddy Report", margin+16, 110, { maxWidth: contentW-32 });
+  doc.text((p.title || "Site Buddy Report") + suffix, margin+16, 110, { maxWidth: contentW-32 });
   doc.setFont("helvetica","normal"); doc.setFontSize(11);
   doc.text(`Reference: ${p.reference || "-"}`, margin+16, 146);
   doc.text(`Client: ${p.client || "-"}`, margin+16, 162);
   doc.text(`Generated: ${new Date().toLocaleString()}`, margin+16, 178);
+  doc.text(`Included issues: ${issues.length}`, margin+16, 194);
 
   // Summary
   doc.addPage(); redFrame(); await addPdfHeader(doc);
-  const issues = (p.issues||[]).slice();
   const openCount = issues.filter(i=>i.status==="open").length;
   const closedCount = issues.filter(i=>i.status==="closed").length;
   const overdueCount = issues.filter(i=>isOverdue(i)).length;
+  const dueTodayCount = issues.filter(i=>isDueToday(i)).length;
   const highCount = issues.filter(i=>i.severity==="high").length;
 
   doc.setFont("helvetica","bold"); doc.setFontSize(18);
@@ -1709,14 +2055,15 @@ async function drawReport(doc, p){
   doc.text(`Open: ${openCount}`, margin+16, 164);
   doc.text(`Closed: ${closedCount}`, margin+16, 184);
   doc.text(`Overdue: ${overdueCount}`, margin+16, 204);
-  doc.text(`High severity: ${highCount}`, margin+16, 224);
+  doc.text(`Due today: ${dueTodayCount}`, margin+16, 224);
+  doc.text(`High severity: ${highCount}`, margin+16, 244);
 
   // Signature
   const sigRec = await dbGet("signatures", p.id);
   if(sigRec?.dataUrl){
     doc.setFont("helvetica","bold"); doc.setFontSize(12);
-    doc.text("Signature", margin+16, 264);
-    try{ doc.addImage(sigRec.dataUrl, "PNG", margin+16, 276, 220, 80); }catch(_){}
+    doc.text("Signature", margin+16, 284);
+    try{ doc.addImage(sigRec.dataUrl, "PNG", margin+16, 296, 220, 80); }catch(_){}
   }
 
   // Group by area then status
@@ -1777,7 +2124,6 @@ async function drawReport(doc, p){
           doc.setFont("helvetica","bold"); doc.setFontSize(14);
           doc.text(`${issue.code||""} • ${issue.title||"Issue"} — ${photoLabel(photoNo)}`, margin+16, 110);
 
-          // Square image box
           const sqUrl = await renderAnnotatedSquareToDataUrl(ph);
           const box = Math.min(contentW - 32, 380);
           const x = margin + 16;
@@ -1811,29 +2157,37 @@ async function drawReport(doc, p){
   }
 }
 
-async function exportPdf(){
+async function exportPdf(opts={mode:"all"}){
   const p = getProject();
   if(!p){ toast("Select a project first"); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:"pt", format:"a4" });
-  await drawReport(doc, p);
-  doc.save(`SiteBuddy_${safeFile(p.title || "Report")}.pdf`);
+  await drawReport(doc, p, opts);
+
+  const extra =
+    opts.mode === "open" ? "_Open" :
+    opts.mode === "closed" ? "_Closed" :
+    opts.mode === "due" ? "_Due" :
+    opts.mode === "area" ? `_Area_${safeFile(opts.area||"")}` :
+    "";
+
+  doc.save(`SiteBuddy_${safeFile(p.title || "Report")}${extra}.pdf`);
   toast("PDF exported");
 }
 
-async function buildPdfBlob(project){
+async function buildPdfBlob(project, opts){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit:"pt", format:"a4" });
-  await drawReport(doc, project);
+  await drawReport(doc, project, opts);
   return doc.output("blob");
 }
 
-$("btnExport").onclick = () => exportPdf();
+$("btnExport").onclick = () => exportPdf({mode:"all"});
 $("btnShare").onclick = async () => {
   const p = getProject();
   if(!p){ toast("Select a project first"); return; }
   try{
-    const blob = await buildPdfBlob(p);
+    const blob = await buildPdfBlob(p, {mode:"all"});
     const name = `SiteBuddy_${safeFile(p.title || "Report")}.pdf`;
     const file = new File([blob], name, { type:"application/pdf" });
 
@@ -1854,6 +2208,12 @@ $("btnShare").onclick = async () => {
     toast("Share failed");
   }
 };
+
+/* Quick export buttons */
+$("btnExportOpen").onclick = async ()=> exportPdf({mode:"open"});
+$("btnExportClosed").onclick = async ()=> exportPdf({mode:"closed"});
+$("btnExportDue").onclick = async ()=> exportPdf({mode:"due"});
+$("btnExportByArea").onclick = async ()=> exportPdf({mode:"all"}); // includes grouped by area in report
 
 /* ===================== PWA install + SW ===================== */
 let deferredPrompt = null;
