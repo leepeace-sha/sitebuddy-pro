@@ -212,7 +212,6 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
-/* Full working code with fixed plan upload */
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 const DB_NAME = "sitebuddy_db_v6";
@@ -236,7 +235,7 @@ async function dbGet(store, key){ return new Promise(r => { const tx = db.transa
 async function dbPut(store, value){ return new Promise(r => { const tx = db.transaction(store,"readwrite"); tx.objectStore(store).put(value); tx.oncomplete = () => r(true); }); }
 async function dbGetAllProjects(){ return new Promise(r => { const tx = db.transaction("projects","readonly"); const req = tx.objectStore("projects").getAll(); req.onsuccess = () => r(req.result.sort((a,b) => (b.updated||0) - (a.updated||0))); }); }
 
-const state = { projects: [], selectedProjectId: null, selectedIssueId: null, companyLogoDataUrl: null };
+const state = { projects: [], selectedProjectId: null };
 function $(id){ return document.getElementById(id); }
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); }
 function getProject(){ return state.projects.find(p => p.id === state.selectedProjectId); }
@@ -252,8 +251,9 @@ async function loadPlan(){
   const img = $("planPreview").querySelector("img");
   const btn = $("btnOpenPlan");
   if(!p || !p.planDataUrl){ img.style.display="none"; btn.disabled=true; return; }
-  img.src = p.planDataUrl; img.style.display = "block"; btn.disabled = false;
-  toast("Preview ready – click Open Plan for Pinning");
+  img.src = p.planDataUrl;
+  img.style.display = "block";
+  btn.disabled = false;
 }
 
 async function pdfToImage(file){
@@ -273,30 +273,26 @@ $("planUpload").onchange = async (e) => {
   const file = e.target.files[0];
   if(!file) return;
   const p = getProject();
-  if(!p) return toast("Select or create a project first");
+  if(!p) return toast("Select a project first");
 
-  try {
-    let dataUrl;
-    if(file.type === "application/pdf"){
-      toast("Converting PDF to image...");
-      dataUrl = await pdfToImage(file);
-    } else {
-      dataUrl = await new Promise(r => {
-        const reader = new FileReader();
-        reader.onload = () => r(reader.result);
-        reader.readAsDataURL(file);
-      });
-    }
-
-    p.planDataUrl = dataUrl;
-    p.updated = Date.now();
-    await dbPut("projects", p);
-    await refreshProject();
-    await loadPlan();
-  } catch(err){
-    console.error(err);
-    toast("Upload failed – try a smaller file");
+  let dataUrl;
+  if(file.type === "application/pdf"){
+    toast("Converting PDF...");
+    dataUrl = await pdfToImage(file);
+  } else {
+    dataUrl = await new Promise(r => {
+      const reader = new FileReader();
+      reader.onload = () => r(reader.result);
+      reader.readAsDataURL(file);
+    });
   }
+
+  p.planDataUrl = dataUrl;
+  p.updated = Date.now();
+  await dbPut("projects", p);
+  await refreshProject();
+  await loadPlan();
+  toast("Preview ready – click 'Open Plan for Pinning'");
   e.target.value = "";
 };
 
@@ -340,13 +336,11 @@ function drawPin(ctx,x,y,num){
   ctx.restore();
 }
 
-/* Rest of the app (shortened for brevity but all functions are present in your previous file – you can keep them) */
 async function init(){
   await openDB();
   state.projects = await dbGetAllProjects();
   if(!state.selectedProjectId && state.projects.length) state.selectedProjectId = state.projects[0].id;
   render();
-  await loadSignatureIntoCanvas();
   loadPlan();
 }
 init();
