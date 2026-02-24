@@ -218,7 +218,7 @@ const DB_NAME = "sitebuddy_db_v6";
 const DB_VER = 6;
 
 let db;
-function openDB(){ return new Promise((resolve, reject) => {
+function openDB() { return new Promise((resolve, reject) => {
   const req = indexedDB.open(DB_NAME, DB_VER);
   req.onupgradeneeded = () => {
     const db = req.result;
@@ -273,7 +273,7 @@ $("planUpload").onchange = async (e) => {
   const file = e.target.files[0];
   if(!file) return;
   const p = getProject();
-  if(!p) return toast("Select a project first");
+  if(!p) return toast("Select or create a project first");
 
   let dataUrl;
   if(file.type === "application/pdf"){
@@ -292,7 +292,7 @@ $("planUpload").onchange = async (e) => {
   await dbPut("projects", p);
   await refreshProject();
   await loadPlan();
-  toast("Preview ready – click 'Open Plan for Pinning'");
+  toast("Preview ready – click Open Plan for Pinning");
   e.target.value = "";
 };
 
@@ -303,7 +303,6 @@ $("btnOpenPlan").onclick = async () => {
   openPlanModal();
 };
 
-/* Plan modal */
 const planCanvas = $("planCanvas");
 const planCtx = planCanvas.getContext("2d");
 let planImg = null;
@@ -340,7 +339,6 @@ async function init(){
   await openDB();
   state.projects = await dbGetAllProjects();
   if(!state.selectedProjectId && state.projects.length) state.selectedProjectId = state.projects[0].id;
-  render();
   loadPlan();
 }
 init();
