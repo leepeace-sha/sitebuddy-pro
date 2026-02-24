@@ -6,7 +6,10 @@
   <meta name="theme-color" content="#b00020"/>
   <link rel="manifest" href="manifest.webmanifest">
   <title>Site Buddy</title>
+
+  <!-- pdf.js for PDF support -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
   <style>
     :root{--bg:#ffffff;--text:#0b1220;--muted:#667085;--border:#b00020;--shadow:0 14px 40px rgba(16,24,40,.10);--radius:18px;--focus:rgba(176,0,32,.20);--chip:#f8fafc;--ok:#0f766e;}
     *{box-sizing:border-box}
@@ -226,7 +229,9 @@ async function loadPlan(){
   const img = $("planPreview").querySelector("img");
   const btn = $("btnOpenPlan");
   if(!p || !p.planDataUrl){ img.style.display="none"; btn.disabled=true; return; }
-  img.src = p.planDataUrl; img.style.display = "block"; btn.disabled = false;
+  img.src = p.planDataUrl;
+  img.style.display = "block";
+  btn.disabled = false;
 }
 
 async function pdfToImage(file){
@@ -248,35 +253,40 @@ $("planUpload").onchange = async (e) => {
   const p = getProject();
   if(!p) return toast("Select a project first");
 
-  let dataUrl;
-  if(file.type === "application/pdf"){
-    toast("Converting PDF...");
-    dataUrl = await pdfToImage(file);
-  } else {
-    dataUrl = await new Promise(r => {
-      const reader = new FileReader();
-      reader.onload = () => r(reader.result);
-      reader.readAsDataURL(file);
-    });
-  }
+  try {
+    let dataUrl;
+    if(file.type === "application/pdf"){
+      toast("Converting PDF to image...");
+      dataUrl = await pdfToImage(file);
+    } else {
+      dataUrl = await new Promise(r => {
+        const reader = new FileReader();
+        reader.onload = () => r(reader.result);
+        reader.readAsDataURL(file);
+      });
+    }
 
-  p.planDataUrl = dataUrl;
-  p.updated = Date.now();
-  await dbPut("projects", p);
-  await refreshProject();
-  await loadPlan();
-  toast("✅ JPEG / PNG / PDF uploaded!");
+    p.planDataUrl = dataUrl;
+    p.updated = Date.now();
+    await dbPut("projects", p);
+    await refreshProject();
+    await loadPlan();
+    toast("✅ Uploaded! Click 'Open Plan for Pinning'");
+  } catch (err) {
+    console.error(err);
+    toast("Upload failed: " + err.message);
+  }
   e.target.value = "";
 };
 
 $("btnOpenPlan").onclick = async () => {
   await refreshProject();
   const p = getProject();
-  if(!p || !p.planDataUrl) return toast("Upload JPEG, PNG or PDF first");
+  if(!p || !p.planDataUrl) return toast("Upload a file first");
   openPlanModal();
 };
 
-/* Plan modal */
+/* Plan modal and pinning */
 const planCanvas = $("planCanvas");
 const planCtx = planCanvas.getContext("2d");
 let planImg = null;
@@ -309,9 +319,13 @@ function drawPin(ctx,x,y,num){
   ctx.restore();
 }
 
-/* Rest of your app code (you can keep your full script if you have it, but for now this will make the upload work) */
+/* Rest of the app (DB, projects, issues, signature, PDF export, etc.) is included in the full version you had before — this patch makes the plan upload work */
 async function init(){
-  // ... your DB and other init code ...
+  await openDB();
+  state.projects = await dbGetAllProjects();
+  if(!state.selectedProjectId && state.projects.length) state.selectedProjectId = state.projects[0].id;
+  render();
+  await loadSignatureIntoCanvas();
   loadPlan();
 }
 init();
