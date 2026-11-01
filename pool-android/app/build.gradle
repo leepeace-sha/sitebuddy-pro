@@ -14,6 +14,13 @@ android {
         versionName '1.1'
     }
     signingConfigs {
+        // Fixed key for test builds, so a newer test APK installs over an older one.
+        debug {
+            storeFile rootProject.file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
         if (ks) {
             release {
                 storeFile file(ks)
