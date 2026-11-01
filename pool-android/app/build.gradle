@@ -1,0 +1,16 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.clubhouse.eightball'
+    compileSdk 34
+    defaultConfig {
+        applicationId 'com.clubhouse.eightball'
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+    // The game itself lives in ../../pool and is bundled as-is into the APK.
+    sourceSets { main { assets.srcDirs = ['../../pool'] } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

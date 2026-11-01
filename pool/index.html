@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b1018">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Clubhouse 8-Ball</title>
+<style>
+  :root { --bg:#0b1018; --panel:rgba(16,22,34,.94); --text:#f5f7fa; --muted:#9aa6b8; --accent:#ffd64f; --green:#2f855a; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; touch-action:none; user-select:none; -webkit-user-select:none; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; touch-action:none; }
+  .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(5,8,14,.55); z-index:5; padding:16px; }
+  .overlay.show { display:flex; }
+  .card { background:var(--panel); border:1px solid rgba(255,255,255,.08); border-radius:24px; padding:22px 26px;
+    box-shadow:0 20px 60px rgba(0,0,0,.6); text-align:center; min-width:min(420px,92vw); max-height:94vh; overflow:auto; }
+  h1 { margin:0 0 2px; font-size:clamp(28px,6vh,46px); letter-spacing:.5px; }
+  h1 span { color:var(--accent); }
+  h2 { margin:0 0 8px; font-size:30px; }
+  p.sub { margin:0 0 16px; color:var(--muted); font-size:15px; }
+  .col { display:flex; flex-direction:column; gap:10px; }
+  .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  button { font:inherit; font-weight:800; font-size:18px; border:0; border-radius:16px; padding:13px 20px; cursor:pointer;
+    color:#fff; background:#2b3546; box-shadow:0 3px 0 rgba(0,0,0,.35); }
+  button:active { transform:translateY(2px); box-shadow:none; }
+  button.primary { background:linear-gradient(#38a169,#2f855a); }
+  button.gold { background:linear-gradient(#f6c344,#d69e2e); color:#1a1300; }
+  button.small { font-size:15px; padding:9px 14px; background:#1d2532; }
+  #diffRow { display:none; } #diffRow.show { display:flex; }
+  #spinBall { width:min(260px,56vh); height:min(260px,56vh); border-radius:50%; margin:6px auto 14px; position:relative; touch-action:none;
+    background:radial-gradient(circle at 35% 30%, #fff 0%, #f1efe6 40%, #b9b6ab 100%); box-shadow:0 10px 30px rgba(0,0,0,.5); cursor:crosshair; }
+  #spinBall::before, #spinBall::after { content:""; position:absolute; background:rgba(0,0,0,.12); }
+  #spinBall::before { left:50%; top:10%; bottom:10%; width:2px; }
+  #spinBall::after { top:50%; left:10%; right:10%; height:2px; }
+  #spinDot { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:#e02424; border:3px solid #fff; left:50%; top:50%; pointer-events:none; }
+  #rotate { position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center; flex-direction:column; gap:14px;
+    background:var(--bg); text-align:center; padding:24px; font-size:20px; }
+  #rotate .ph { font-size:64px; animation:spin 2s ease-in-out infinite; }
+  @keyframes spin { 0%,30%{transform:rotate(0)} 60%,100%{transform:rotate(-90deg)} }
+  @media (orientation:portrait) { #rotate { display:flex; } }
+  .help { color:var(--muted); font-size:13px; line-height:1.45; margin-top:14px; text-align:left; }
+  .help b { color:var(--text); }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="menu" class="overlay">
+  <div class="card col">
+    <h1>Clubhouse <span>8-Ball</span></h1>
+    <p class="sub">Offline · no ads · no accounts</p>
+    <button class="primary" id="btnCpu">Play vs Computer</button>
+    <div class="row" id="diffRow">
+      <button class="small" data-diff="0">Easy</button>
+      <button class="small" data-diff="1">Medium</button>
+      <button class="small" data-diff="2">Hard</button>
+    </div>
+    <button class="primary" id="btn2p">2 Players (pass &amp; play)</button>
+    <button id="btnPractice">Practice</button>
+    <div class="row"><button class="small tSound"></button><button class="small tGuide"></button></div>
+    <div class="help">
+      <b>Aim:</b> touch / drag anywhere on the table. <b>Fine aim:</b> drag the wheel on the right.
+      <b>Shoot:</b> pull the power bar on the left down and let go. <b>Spin:</b> tap the cue ball top-right.
+      <b>Ball in hand:</b> drag the cue ball. On the 8-ball, tap a pocket to call it.
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="overlay">
+  <div class="card col">
+    <h2>Paused</h2>
+    <button class="primary" id="btnResume">Resume</button>
+    <button id="btnRestart">Restart game</button>
+    <div class="row"><button class="small tSound"></button><button class="small tGuide"></button></div>
+    <button id="btnQuit">Main menu</button>
+  </div>
+</div>
+
+<div id="over" class="overlay">
+  <div class="card col">
+    <h2 id="overTitle">Game over</h2>
+    <p class="sub" id="overReason"></p>
+    <button class="gold" id="btnAgain">Play again</button>
+    <button id="btnMenu">Main menu</button>
+  </div>
+</div>
+
+<div id="spinPanel" class="overlay">
+  <div class="card">
+    <h2>Cue ball spin</h2>
+    <p class="sub">Tap where the cue hits the ball — top = follow, bottom = draw, sides = english</p>
+    <div id="spinBall"><div id="spinDot"></div></div>
+    <div class="row"><button class="small" id="spinReset">Center</button><button class="primary" id="spinDone">Done</button></div>
+  </div>
+</div>
+
+<div id="rotate"><div class="ph">📱</div><div>Rotate your phone to landscape to play</div></div>
+
+<script src="game.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
