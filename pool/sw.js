@@ -1,5 +1,5 @@
 // Offline cache for Clubhouse 8-Ball. Bump CACHE when files change.
-const CACHE = 'clubhouse-8ball-v2';
+const CACHE = 'clubhouse-8ball-v3';
 const ASSETS = ['./', './index.html', './game.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {

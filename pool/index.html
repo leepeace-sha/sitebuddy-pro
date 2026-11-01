@@ -48,11 +48,11 @@
   #spinBall::before { left:50%; top:10%; bottom:10%; width:2px; }
   #spinBall::after { top:50%; left:10%; right:10%; height:2px; }
   #spinDot { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:#e02424; border:3px solid #fff; left:50%; top:50%; pointer-events:none; }
-  #rotate { position:fixed; inset:0; z-index:20; display:none; color:var(--text); align-items:center; justify-content:center; flex-direction:column; gap:14px;
-    background:var(--bg); text-align:center; padding:24px; font-size:20px; }
-  #rotate .ph { font-size:64px; animation:spin 2s ease-in-out infinite; }
-  @keyframes spin { 0%,30%{transform:rotate(0)} 60%,100%{transform:rotate(-90deg)} }
-  @media (orientation:portrait) { #rotate { display:flex; } }
+  @media (orientation:portrait) {
+    #menu.overlay { justify-content:center; align-items:flex-end; padding:16px max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+      background:linear-gradient(0deg, rgba(8,4,2,.85) 0%, rgba(8,4,2,.4) 45%, rgba(0,0,0,0) 65%); }
+    #menu .card { width:min(520px, 100%); }
+  }
   .help { color:var(--muted); font-size:13px; line-height:1.45; margin-top:14px; text-align:left; }
   .help b { color:var(--text); }
 </style>
@@ -109,7 +109,6 @@
   </div>
 </div>
 
-<div id="rotate"><div class="ph">📱</div><div>Rotate your phone to landscape to play</div></div>
 
 <script src="game.js"></script>
 <script>

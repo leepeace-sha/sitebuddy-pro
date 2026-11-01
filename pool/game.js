@@ -11,7 +11,9 @@ const MAX_SPEED = 5200;
 const FR_A = 140, FR_K = 0.32;               // rolling friction: dv/dt = -(A + K v)
 const E_BALL = 0.95, E_CUSH = 0.78;
 const DT = 1 / 480;
-const DW = 2620, DH = 1460, TX = 310, TY = 310; // design space & table origin
+const TX = 310, TY = 310;                    // landscape table origin
+const PCX = 650, PCY = 1450;                 // portrait table centre
+let DW = 2620, DH = 1460, PORT = false;      // design space (switches with orientation)
 const COLORS = ['#f6f3e8', '#f2b705', '#1d4fd8', '#d62828', '#6a2c91', '#f26b0f', '#11823b', '#7f1d1d', '#141414'];
 const ballColor = n => COLORS[n > 8 ? n - 8 : n];
 const groupOf = n => (n >= 1 && n <= 7 ? 'solids' : n >= 9 ? 'stripes' : null);
@@ -336,38 +338,82 @@ function aiPlan(G) {
 }
 
 // ───────────────────────────── audio ─────────────────────────────
+// All sounds are synthesised: a master bus with a gentle compressor (so big breaks don't
+// distort) and a short room reverb send that gives the pool-hall body.
 const Snd = {
-  ac: null, on: true, noise: null, last: 0,
+  ac: null, on: true, noise: null, last: 0, out: null, rollG: null,
   init() {
     if (this.ac) { if (this.ac.state === 'suspended') this.ac.resume(); return; }
     try {
-      this.ac = new (window.AudioContext || window.webkitAudioContext)();
-      const len = this.ac.sampleRate * 0.3, buf = this.ac.createBuffer(1, len, this.ac.sampleRate), d = buf.getChannelData(0);
+      const ac = this.ac = new (window.AudioContext || window.webkitAudioContext)();
+      const sr = ac.sampleRate, len = sr * 1, buf = ac.createBuffer(1, len, sr), d = buf.getChannelData(0);
       for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       this.noise = buf;
+      const comp = ac.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.002; comp.release.value = 0.15;
+      const warm = ac.createBiquadFilter(); warm.type = 'highshelf'; warm.frequency.value = 5000; warm.gain.value = -6;
+      warm.connect(comp); comp.connect(ac.destination);
+      this.out = ac.createGain(); this.out.gain.value = 0.9; this.out.connect(warm);
+      // room reverb: decaying stereo noise impulse, low-passed so it sounds like a carpeted hall
+      const irLen = Math.floor(sr * 0.9), ir = ac.createBuffer(2, irLen, sr);
+      for (let ch = 0; ch < 2; ch++) {
+        const x = ir.getChannelData(ch); let lp = 0;
+        for (let i = 0; i < irLen; i++) { lp += 0.25 * ((Math.random() * 2 - 1) - lp); x[i] = lp * Math.pow(1 - i / irLen, 2.6) * (i < sr * 0.012 ? 0.3 : 1); }
+      }
+      const conv = ac.createConvolver(); conv.buffer = ir;
+      const wet = ac.createGain(); wet.gain.value = 0.32;
+      this.out.connect(conv); conv.connect(wet); wet.connect(warm);
+      // rolling rumble, driven by how fast the balls are moving
+      const rs = ac.createBufferSource(); rs.buffer = buf; rs.loop = true;
+      const rf = ac.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 170; rf.Q.value = 0.7;
+      this.rollG = ac.createGain(); this.rollG.gain.value = 0;
+      rs.connect(rf); rf.connect(this.rollG); this.rollG.connect(this.out); rs.start();
     } catch (e) { this.ac = null; }
+  },
+  tone(freq, endFreq, dur, gain, t, type = 'sine') {
+    const ac = this.ac, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t); if (endFreq !== freq) o.frequency.exponentialRampToValueAtTime(endFreq, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.out); o.start(t); o.stop(t + dur + 0.02);
+  },
+  burst(ftype, freq, q, dur, gain, t) {
+    const ac = this.ac, src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = this.noise; src.playbackRate.value = 0.8 + Math.random() * 0.4;
+    f.type = ftype; f.frequency.value = freq; f.Q.value = q;
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(this.out); src.start(t, Math.random() * 0.5); src.stop(t + dur + 0.02);
   },
   play(type, vol) {
     if (!this.on || !this.ac || vol < 0.02 || (G && G.demo)) return;
-    const ac = this.ac, t = ac.currentTime;
-    if (t - this.last < 0.012) return; this.last = t;
-    const src = ac.createBufferSource(); src.buffer = this.noise;
-    const f = ac.createBiquadFilter(), g = ac.createGain();
-    let dur = 0.05;
-    if (type === 'ball') {                   // phenolic 'clack': two bright partials plus a noise transient
-      f.type = 'bandpass'; f.frequency.value = 3800; f.Q.value = 1.5; dur = 0.025;
-      for (const [fr, gn] of [[2650, 0.5], [4300, 0.3]]) {
-        const o = ac.createOscillator(), og = ac.createGain(); o.frequency.value = fr * (0.97 + Math.random() * 0.06);
-        og.gain.setValueAtTime(gn * Math.min(1, vol), t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
-        o.connect(og); og.connect(ac.destination); o.start(t); o.stop(t + 0.06);
+    const t = this.ac.currentTime; vol = Math.min(1, vol);
+    if (type === 'ball') {
+      if (t - this.last < 0.015) return; this.last = t;
+      const p = 0.94 + Math.random() * 0.12, v = 0.15 + vol * 0.85;
+      this.burst('bandpass', 2600 * p, 0.9, 0.012, 0.55 * v, t);     // sharp contact
+      this.tone(1480 * p, 1400 * p, 0.05, 0.32 * v, t);              // phenolic ring, low
+      this.tone(2350 * p, 2250 * p, 0.03, 0.16 * v, t);              // phenolic ring, high
+      this.tone(320, 180, 0.05, 0.22 * v, t);                         // body
+    } else if (type === 'cush') {
+      this.burst('lowpass', 260, 0.7, 0.1, 0.7 * vol, t);
+      this.tone(120, 70, 0.12, 0.45 * vol, t);
+    } else if (type === 'pocket') {
+      this.tone(170, 55, 0.28, 0.6 * vol, t);
+      this.burst('lowpass', 500, 0.8, 0.18, 0.5 * vol, t);
+      for (let i = 1; i <= 5; i++) {                                  // ball rattling down the return
+        const dt = 0.12 + i * (0.07 + Math.random() * 0.03);
+        this.burst('bandpass', 900 + Math.random() * 300, 2, 0.03, 0.22 * vol * (1 - i / 7), t + dt);
+        this.tone(600 + Math.random() * 100, 500, 0.03, 0.06 * vol, t + dt);
       }
+    } else {                                                          // cue tip on ball
+      this.burst('bandpass', 1300, 1.1, 0.02, 0.5 * vol, t);
+      this.tone(760, 620, 0.04, 0.25 * vol, t);
+      this.tone(240, 160, 0.07, 0.35 * vol, t);
     }
-    else if (type === 'cush') { f.type = 'lowpass'; f.frequency.value = 380; dur = 0.09; vol *= 1.6; }
-    else if (type === 'pocket') { f.type = 'lowpass'; f.frequency.value = 220; dur = 0.22; vol *= 2.2; }
-    else { f.type = 'bandpass'; f.frequency.value = 1500; f.Q.value = 1.2; dur = 0.05; }
-    g.gain.setValueAtTime(Math.min(1, vol), t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-    src.connect(f); f.connect(g); g.connect(ac.destination); src.start(t); src.stop(t + dur + 0.02);
-    if (type === 'pocket') { const o = ac.createOscillator(), og = ac.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.2); og.gain.setValueAtTime(0.25 * Math.min(1, vol), t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.25); o.connect(og); og.connect(ac.destination); o.start(t); o.stop(t + 0.3); }
+  },
+  roll(level) {
+    if (!this.rollG) return;
+    const v = this.on && !(G && G.demo) ? Math.min(0.5, level) : 0;
+    this.rollG.gain.setTargetAtTime(v, this.ac.currentTime, 0.08);
   },
 };
 
@@ -479,10 +525,31 @@ function resize() {
   dpr = Math.min(2, window.devicePixelRatio || 1);
   const w = window.innerWidth, h = window.innerHeight;
   cv.width = stat.width = Math.round(w * dpr); cv.height = stat.height = Math.round(h * dpr);
+  PORT = h > w * 1.05;
+  LAY = PORT ? LAY_P : LAY_L; DW = LAY.dw; DH = LAY.dh;
   scale = Math.min(cv.width / DW, cv.height / DH);
   offX = (cv.width - DW * scale) / 2; offY = (cv.height - DH * scale) / 2;
   drawStatic();
 }
+// Layouts: landscape puts controls at the sides; portrait stands the table upright
+// with the scores on top and the power / fine-aim sliders underneath.
+const LAY_L = {
+  dw: 2620, dh: 1460, menu: { x: 90, y: 90, r: 62 }, spin: { x: 2530, y: 90, r: 64 },
+  panels: [{ x: 180, y: 22, w: 900, h: 136, left: true }, { x: 1540, y: 22, w: 900, h: 136, left: false }],
+  center: { x: 1310, y: 90, wide: true }, power: { x: 35, y: 180, w: 110, h: 1260 }, fine: { x: 2475, y: 180, w: 110, h: 1260 },
+  banner: { x: TX + W / 2, y: TY + 84, max: W - 100 }, lightC: { x: TX + W / 2, y: TY + H / 2 },
+  props: [['stool', -170, 1180, 0.3], ['table', -200, 470, 0], ['stool', 2800, 330, 1.2], ['table', 2810, 1090, 1], ['stool', 300, 1720, 2], ['stool', 2300, -260, 0.8]],
+};
+const LAY_P = {
+  dw: 1300, dh: 2930, menu: { x: 86, y: 250, r: 54 }, spin: { x: 1214, y: 250, r: 58 },
+  panels: [{ x: 20, y: 24, w: 620, h: 150, left: true }, { x: 660, y: 24, w: 620, h: 150, left: false }],
+  center: { x: 650, y: 250, wide: false }, power: { x: 20, y: 2610, w: 1260, h: 120, horiz: true }, fine: { x: 20, y: 2765, w: 1260, h: 130, horiz: true },
+  banner: { x: 650, y: 410, max: 1160 }, lightC: { x: PCX, y: PCY },
+  props: [['stool', -150, 700, 0.3], ['table', -170, 1900, 0], ['stool', 1450, 2250, 1.2], ['table', 1470, 900, 1], ['stool', 300, 3120, 2], ['stool', 1050, -150, 0.8]],
+};
+let LAY = LAY_L;
+function tableXform(c) { if (PORT) { c.translate(PCX, PCY); c.rotate(-Math.PI / 2); c.translate(-W / 2, -H / 2); } else c.translate(TX, TY); }
+const toTable = d => (PORT ? { x: W / 2 - (d.y - PCY), y: H / 2 + (d.x - PCX) } : { x: d.x - TX, y: d.y - TY });
 const toDesign = e => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) * dpr - offX) / scale, y: ((e.clientY - r.top) * dpr - offY) / scale }; };
 
 function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
@@ -697,15 +764,14 @@ function drawStatic() {
   c.fillStyle = carpetPattern(c, 220 * scale); c.fillRect(0, 0, stat.width, stat.height);
   c.setTransform(scale, 0, 0, scale, offX, offY);
   // furniture around the table (mostly visible on wide phones)
-  stool(c, -170, 1180, 0.3); sideTable(c, -200, 470, 0); stool(c, 2800, 330, 1.2); sideTable(c, 2810, 1090, 1);
-  stool(c, 300, 1720, 2); stool(c, 2300, -260, 0.8);
+  for (const [k, x, y, a] of LAY.props) k === 'stool' ? stool(c, x, y, a) : sideTable(c, x, y, a);
   // warm light over the table, darkness at the edges of the room
   c.setTransform(1, 0, 0, 1, 0, 0);
-  const cx = offX + (TX + W / 2) * scale, cy = offY + (TY + H / 2) * scale, far = Math.hypot(stat.width, stat.height) * 0.6;
+  const cx = offX + LAY.lightC.x * scale, cy = offY + LAY.lightC.y * scale, far = Math.hypot(stat.width, stat.height) * 0.6;
   const lg = c.createRadialGradient(cx, cy, (H / 2) * scale, cx, cy, Math.max(far, (W * 0.75) * scale));
   lg.addColorStop(0, 'rgba(255,170,80,0.10)'); lg.addColorStop(0.4, 'rgba(10,4,2,0.5)'); lg.addColorStop(1, 'rgba(0,0,0,0.88)');
   c.fillStyle = lg; c.fillRect(0, 0, stat.width, stat.height);
-  c.setTransform(scale, 0, 0, scale, offX, offY); c.translate(TX, TY);
+  c.setTransform(scale, 0, 0, scale, offX, offY); tableXform(c);
   drawTable(c);
 }
 
@@ -745,6 +811,7 @@ function drawBall(c, b, x, y, r, alpha = 1, lit = false) {
       const pxy = Math.hypot(q[0], q[1]) || 1, ux = q[0] / pxy, uy = q[1] / pxy, k = q[2] - 1;
       c.save(); c.translate(q[0] * r, q[1] * r);
       c.transform(1 + k * ux * ux, k * ux * uy, k * ux * uy, 1 + k * uy * uy, 0, 0);
+      if (lit && PORT) c.rotate(Math.PI / 2);
       c.fillStyle = '#111'; c.font = `bold ${r * (b.n > 9 ? 0.62 : 0.72)}px system-ui, sans-serif`;
       c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(b.n, 0, r * 0.04);
       c.restore();
@@ -837,79 +904,95 @@ function drawCue(c, x, y, ang, pull, alpha = 1) {
   taper(c, xs(0), xs(L), w(0), w(L), sh);
   c.restore();
 }
-const MENU_BTN = { x: 90, y: 90, r: 62 }, SPIN_BTN = { x: 2530, y: 90, r: 64 };
 function drawHUD(c, t) {
-  // menu button
-  rr(c, MENU_BTN.x - 60, MENU_BTN.y - 60, 120, 120, 26); { const g = c.createLinearGradient(0, 30, 0, 150); g.addColorStop(0, '#d9a441'); g.addColorStop(1, '#8a5a17'); c.fillStyle = g; } c.fill(); c.strokeStyle = 'rgba(255,240,200,0.5)'; c.lineWidth = 3; c.stroke();
-  c.fillStyle = '#fff'; for (let i = -1; i <= 1; i++) { rr(c, MENU_BTN.x - 32, MENU_BTN.y + i * 22 - 6, 64, 12, 6); c.fill(); }
-  // spin button
-  const sb = SPIN_BTN; const g = c.createRadialGradient(sb.x - 20, sb.y - 22, 4, sb.x, sb.y, sb.r);
+  const mb = LAY.menu, sb = LAY.spin;
+  rr(c, mb.x - mb.r, mb.y - mb.r, mb.r * 2, mb.r * 2, mb.r * 0.42);
+  { const g = c.createLinearGradient(0, mb.y - mb.r, 0, mb.y + mb.r); g.addColorStop(0, '#d9a441'); g.addColorStop(1, '#8a5a17'); c.fillStyle = g; }
+  c.fill(); c.strokeStyle = 'rgba(255,240,200,0.5)'; c.lineWidth = 3; c.stroke();
+  c.fillStyle = '#fff'; for (let i = -1; i <= 1; i++) { rr(c, mb.x - mb.r * 0.52, mb.y + i * mb.r * 0.36 - mb.r * 0.1, mb.r * 1.04, mb.r * 0.2, mb.r * 0.1); c.fill(); }
+  const g = c.createRadialGradient(sb.x - sb.r * 0.3, sb.y - sb.r * 0.35, 4, sb.x, sb.y, sb.r);
   g.addColorStop(0, '#fff'); g.addColorStop(1, '#bdbab0'); c.fillStyle = g; c.beginPath(); c.arc(sb.x, sb.y, sb.r, 0, TAU); c.fill();
   c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 2; c.beginPath(); c.arc(sb.x, sb.y, sb.r * 0.75, 0, TAU); c.stroke();
-  c.fillStyle = '#e02424'; c.beginPath(); c.arc(sb.x + G.spin.x * sb.r * 0.75, sb.y - G.spin.y * sb.r * 0.75, 11, 0, TAU); c.fill();
-  // players
-  const panel = (i, x0, align) => {
+  c.fillStyle = '#e02424'; c.beginPath(); c.arc(sb.x + G.spin.x * sb.r * 0.75, sb.y - G.spin.y * sb.r * 0.75, sb.r * 0.17, 0, TAU); c.fill();
+  const panel = (i, P) => {
     const active = G.turn === i && !G.over, p = G.players[i];
     if (G.mode === 'practice' && i === 1) return;
-    rr(c, x0, 22, 900, 136, 30); c.fillStyle = active ? 'rgba(28,22,18,0.82)' : 'rgba(10,8,8,0.66)'; c.fill(); if (!active) { c.strokeStyle = 'rgba(217,164,65,0.22)'; c.lineWidth = 3; c.stroke(); }
+    rr(c, P.x, P.y, P.w, P.h, 30); c.fillStyle = active ? 'rgba(28,22,18,0.82)' : 'rgba(10,8,8,0.66)'; c.fill();
     if (active) { c.strokeStyle = `rgba(240,190,90,${0.65 + 0.35 * Math.sin(t * 5)})`; c.lineWidth = 5; c.stroke(); }
-    const ax = align ? x0 + 72 : x0 + 900 - 72;
-    c.fillStyle = i ? '#b83280' : '#2b6cb0'; c.beginPath(); c.arc(ax, 90, 54, 0, TAU); c.fill();
+    else { c.strokeStyle = 'rgba(217,164,65,0.22)'; c.lineWidth = 3; c.stroke(); }
+    const ar = P.h * 0.38, ax = P.left ? P.x + P.h * 0.5 : P.x + P.w - P.h * 0.5, ay = P.y + P.h / 2;
+    c.fillStyle = i ? '#b83280' : '#2b6cb0'; c.beginPath(); c.arc(ax, ay, ar, 0, TAU); c.fill();
     c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke();
-    c.fillStyle = '#fff'; c.font = 'bold 54px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(p.cpu ? '🤖' : p.name[0], ax, 93);
-    c.font = 'bold 42px system-ui, sans-serif'; c.textAlign = align ? 'left' : 'right'; c.textBaseline = 'alphabetic';
-    const nx = align ? ax + 80 : ax - 80;
-    c.fillText(p.name, nx, 72);
+    c.fillStyle = '#fff'; c.font = `bold ${ar}px system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText(p.cpu ? '🤖' : p.name[0], ax, ay + 3);
+    const nx = P.left ? ax + ar + 24 : ax - ar - 24;
+    c.font = `bold ${P.h * 0.3}px system-ui, sans-serif`; c.textAlign = P.left ? 'left' : 'right'; c.textBaseline = 'alphabetic';
+    c.fillText(p.name, nx, P.y + P.h * 0.38, P.w - P.h - 40);
     const grp = G.groups[i];
     let nums = grp === 'solids' ? [1, 2, 3, 4, 5, 6, 7] : grp === 'stripes' ? [9, 10, 11, 12, 13, 14, 15] : [];
     if (G.mode === 'practice') nums = [];
+    const sp = Math.min(P.h * 0.41, (P.w - P.h - 40) / 8), br = Math.min(P.h * 0.17, sp / 2.35), by = P.y + P.h * 0.72;
     for (let k = 0; k < 8; k++) {
-      const bx = align ? nx + 26 + k * 60 : nx - 26 - k * 60, by = 120;
+      const bx = P.left ? nx + br + k * sp : nx - br - k * sp;
       const n = k < 7 ? nums[k] : (grp ? 8 : undefined);
-      if (n === undefined) { c.fillStyle = 'rgba(0,0,0,0.45)'; c.beginPath(); c.arc(bx, by, 24, 0, TAU); c.fill(); continue; }
+      if (n === undefined || (n === 8 && !onEight(i))) { c.fillStyle = 'rgba(0,0,0,0.45)'; c.beginPath(); c.arc(bx, by, br, 0, TAU); c.fill(); continue; }
       const b = G.balls.find(x => x.n === n), dim = b && !b.on;
-      if (n === 8 && !onEight(i)) { c.fillStyle = 'rgba(0,0,0,0.45)'; c.beginPath(); c.arc(bx, by, 24, 0, TAU); c.fill(); continue; }
-      drawBall(c, { n, p: [0, 0, 1], q: [0, 0, 1] }, bx, by, 24, dim ? 0.18 : 1);
+      drawBall(c, { n, p: [0, 0, 1], q: [0, 0, 1] }, bx, by, br, dim ? 0.18 : 1);
     }
   };
-  panel(0, 180, true); panel(1, 1540, false);
-  rr(c, 1130, 30, 360, 120, 30); c.fillStyle = 'rgba(10,8,8,0.6)'; c.fill();
-  c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#e8b64c'; c.font = 'bold 46px Georgia, serif';
-  c.fillText(G.mode === 'practice' ? 'PRACTICE' : 'VS', 1310, 70);
-  c.fillStyle = 'rgba(255,255,255,0.7)'; c.font = '30px system-ui, sans-serif';
+  panel(0, LAY.panels[0]); panel(1, LAY.panels[1]);
   const status = G.isBreak ? 'Break' : !G.groups[0] ? 'Open table' : G.mode === 'cpu' ? ['Easy', 'Medium', 'Hard'][G.diff] : '8-Ball';
-  c.fillText(status, 1310, 120);
+  const ce = LAY.center, top = G.mode === 'practice' ? 'PRACTICE' : 'VS';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  if (ce.wide) {
+    rr(c, ce.x - 180, ce.y - 60, 360, 120, 30); c.fillStyle = 'rgba(10,8,8,0.6)'; c.fill();
+    c.fillStyle = '#e8b64c'; c.font = 'bold 46px Georgia, serif'; c.fillText(top, ce.x, ce.y - 20);
+    c.fillStyle = 'rgba(255,255,255,0.7)'; c.font = '30px system-ui, sans-serif'; c.fillText(status, ce.x, ce.y + 30);
+  } else {
+    rr(c, ce.x - 260, ce.y - 42, 520, 84, 42); c.fillStyle = 'rgba(10,8,8,0.6)'; c.fill();
+    c.fillStyle = '#e8b64c'; c.font = 'bold 40px Georgia, serif'; c.fillText(`${top} · `, ce.x - 90, ce.y + 2);
+    c.fillStyle = 'rgba(255,255,255,0.8)'; c.font = '34px system-ui, sans-serif'; c.textAlign = 'left'; c.fillText(status, ce.x - 30, ce.y + 2);
+  }
+}
+// A control strip, vertical (landscape) or horizontal (portrait). `along` measures the long axis.
+function strip(c, P) {
+  rr(c, P.x, P.y, P.w, P.h, 40); c.fillStyle = 'rgba(12,8,6,0.72)'; c.fill(); c.strokeStyle = 'rgba(217,164,65,0.35)'; c.lineWidth = 3; c.stroke();
 }
 function drawSide(c, t) {
-  // power meter
-  const x = 35, y = TY - OUT, h = H + 2 * OUT, wdt = 110;
-  rr(c, x, y, wdt, h, 40); c.fillStyle = 'rgba(12,8,6,0.72)'; c.fill(); c.strokeStyle = 'rgba(217,164,65,0.35)'; c.lineWidth = 3; c.stroke();
-  const ix = x + 30, iw = 50, iy = y + 70, ih = h - 140;
-  rr(c, ix, iy, iw, ih, 25); c.fillStyle = '#0c1118'; c.fill();
-  const pw = G.power;
+  const pw = G.power, P = LAY.power, F = LAY.fine, hz = !!P.horiz;
+  strip(c, P);
+  // inner track: leave room for labels at both ends
+  const pad = 80, tr = hz ? { x: P.x + 150, y: P.y + 32, w: P.w - 300, h: P.h - 64 } : { x: P.x + 30, y: P.y + 70, w: 50, h: P.h - 140 };
+  rr(c, tr.x, tr.y, tr.w, tr.h, 25); c.fillStyle = '#0c0907'; c.fill();
   if (pw > 0) {
-    const pg = c.createLinearGradient(0, iy, 0, iy + ih); pg.addColorStop(0, '#3ddc84'); pg.addColorStop(0.55, '#ffd64f'); pg.addColorStop(1, '#ff4d4d');
-    c.save(); rr(c, ix, iy, iw, ih, 25); c.clip(); c.fillStyle = pg; c.fillRect(ix, iy, iw, ih * pw); c.restore();
+    const pg = hz ? c.createLinearGradient(tr.x, 0, tr.x + tr.w, 0) : c.createLinearGradient(0, tr.y, 0, tr.y + tr.h);
+    pg.addColorStop(0, '#3ddc84'); pg.addColorStop(0.55, '#ffd64f'); pg.addColorStop(1, '#ff4d4d');
+    c.save(); rr(c, tr.x, tr.y, tr.w, tr.h, 25); c.clip(); c.fillStyle = pg;
+    hz ? c.fillRect(tr.x, tr.y, tr.w * pw, tr.h) : c.fillRect(tr.x, tr.y, tr.w, tr.h * pw); c.restore();
   }
   c.strokeStyle = 'rgba(255,255,255,0.15)'; c.lineWidth = 2;
-  for (let i = 1; i < 10; i++) { c.beginPath(); c.moveTo(ix + 8, iy + ih * i / 10); c.lineTo(ix + iw - 8, iy + ih * i / 10); c.stroke(); }
+  for (let i = 1; i < 10; i++) { c.beginPath(); if (hz) { const x = tr.x + tr.w * i / 10; c.moveTo(x, tr.y + 8); c.lineTo(x, tr.y + tr.h - 8); } else { const y = tr.y + tr.h * i / 10; c.moveTo(tr.x + 8, y); c.lineTo(tr.x + tr.w - 8, y); } c.stroke(); }
   c.fillStyle = 'rgba(255,255,255,0.75)'; c.font = 'bold 26px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillText('POWER', x + wdt / 2, y + 36);
-  if (G.phase === 'aim' && human() && pw === 0) { const a = 0.4 + 0.4 * Math.sin(t * 4); c.fillStyle = `rgba(255,255,255,${a})`; c.font = 'bold 50px system-ui'; c.fillText('⇩', x + wdt / 2, y + h - 34); }
-  else c.fillText(Math.round(pw * 100) + '%', x + wdt / 2, y + h - 36);
+  const lab1 = hz ? [P.x + 75, P.y + P.h / 2] : [P.x + P.w / 2, P.y + 36], lab2 = hz ? [P.x + P.w - 75, P.y + P.h / 2] : [P.x + P.w / 2, P.y + P.h - 36];
+  c.fillText('POWER', lab1[0], lab1[1]);
+  if (G.phase === 'aim' && human() && pw === 0) { const a = 0.4 + 0.4 * Math.sin(t * 4); c.fillStyle = `rgba(255,255,255,${a})`; c.font = 'bold 50px system-ui'; c.fillText(hz ? '⇨' : '⇩', lab2[0], lab2[1]); }
+  else c.fillText(Math.round(pw * 100) + '%', lab2[0], lab2[1]);
   // fine aim wheel
-  const fx = DW - 35 - wdt;
-  rr(c, fx, y, wdt, h, 40); c.fillStyle = 'rgba(12,8,6,0.72)'; c.fill(); c.strokeStyle = 'rgba(217,164,65,0.35)'; c.stroke();
-  c.save(); rr(c, fx + 20, y + 70, wdt - 40, h - 140, 30); c.clip();
-  const wg = c.createLinearGradient(fx, 0, fx + wdt, 0); wg.addColorStop(0, '#555'); wg.addColorStop(0.5, '#bbb'); wg.addColorStop(1, '#555');
-  c.fillStyle = wg; c.fillRect(fx, y, wdt, h);
+  strip(c, F);
+  const ir = hz ? { x: F.x + 150, y: F.y + 22, w: F.w - 300, h: F.h - 44 } : { x: F.x + 20, y: F.y + 70, w: F.w - 40, h: F.h - 140 };
+  c.save(); rr(c, ir.x, ir.y, ir.w, ir.h, 30); c.clip();
+  const wg = hz ? c.createLinearGradient(0, ir.y, 0, ir.y + ir.h) : c.createLinearGradient(ir.x, 0, ir.x + ir.w, 0);
+  wg.addColorStop(0, '#555'); wg.addColorStop(0.5, '#bbb'); wg.addColorStop(1, '#555'); c.fillStyle = wg; c.fillRect(ir.x, ir.y, ir.w, ir.h);
   c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = 6;
   const off = ((G.fine % 40) + 40) % 40;
-  for (let yy = y + 70 + off - 40; yy < y + h; yy += 40) { c.beginPath(); c.moveTo(fx, yy); c.lineTo(fx + wdt, yy); c.stroke(); }
-  const shade = c.createLinearGradient(0, y + 70, 0, y + h - 70); shade.addColorStop(0, 'rgba(0,0,0,0.7)'); shade.addColorStop(0.2, 'rgba(0,0,0,0)'); shade.addColorStop(0.8, 'rgba(0,0,0,0)'); shade.addColorStop(1, 'rgba(0,0,0,0.7)');
-  c.fillStyle = shade; c.fillRect(fx, y, wdt, h); c.restore();
-  c.fillStyle = 'rgba(255,255,255,0.75)'; c.font = 'bold 26px system-ui'; c.fillText('FINE', fx + wdt / 2, y + 36); c.fillText('AIM', fx + wdt / 2, y + h - 36);
+  if (hz) for (let x = ir.x + off - 40; x < ir.x + ir.w + 40; x += 40) { c.beginPath(); c.moveTo(x, ir.y); c.lineTo(x, ir.y + ir.h); c.stroke(); }
+  else for (let y = ir.y + off - 40; y < ir.y + ir.h + 40; y += 40) { c.beginPath(); c.moveTo(ir.x, y); c.lineTo(ir.x + ir.w, y); c.stroke(); }
+  const sh = hz ? c.createLinearGradient(ir.x, 0, ir.x + ir.w, 0) : c.createLinearGradient(0, ir.y, 0, ir.y + ir.h);
+  sh.addColorStop(0, 'rgba(0,0,0,0.7)'); sh.addColorStop(0.2, 'rgba(0,0,0,0)'); sh.addColorStop(0.8, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,0.7)');
+  c.fillStyle = sh; c.fillRect(ir.x, ir.y, ir.w, ir.h); c.restore();
+  c.fillStyle = 'rgba(255,255,255,0.75)'; c.font = 'bold 26px system-ui';
+  if (hz) { c.fillText('FINE', F.x + 75, F.y + F.h / 2); c.fillText('AIM', F.x + F.w - 75, F.y + F.h / 2); }
+  else { c.fillText('FINE', F.x + F.w / 2, F.y + 36); c.fillText('AIM', F.x + F.w / 2, F.y + F.h - 36); }
 }
 
 function render(t) {
@@ -917,12 +1000,12 @@ function render(t) {
   if (!G) return;
   ctx.setTransform(scale, 0, 0, scale, offX, offY);
   if (!G.demo) { drawHUD(ctx, t); drawSide(ctx, t); }
-  ctx.translate(TX, TY);
+  ctx.save(); tableXform(ctx);
   const c = ctx;
   // pocket call markers
   if (needCall() && (G.phase === 'aim' || G.phase === 'cpu')) {
     POCKETS.forEach((p, i) => {
-      if (G.called === i) { c.strokeStyle = '#ffd64f'; c.lineWidth = 7; c.beginPath(); c.arc(p.x, p.y, p.r + 4 + 4 * Math.sin(t * 6), 0, TAU); c.stroke(); drawBall(c, { n: 8, p: [0, 0, 1], q: [0, 0, 1] }, p.x, p.y, 20); }
+      if (G.called === i) { c.strokeStyle = '#ffd64f'; c.lineWidth = 7; c.beginPath(); c.arc(p.x, p.y, p.r + 4 + 4 * Math.sin(t * 6), 0, TAU); c.stroke(); drawBall(c, { n: 8, p: [0, 0, 1], q: [0, 0, 1] }, p.x, p.y, 20, 1, true); }
       else if (G.called < 0 && human()) { c.setLineDash([12, 10]); c.strokeStyle = `rgba(255,255,255,${0.4 + 0.3 * Math.sin(t * 5)})`; c.lineWidth = 4; c.beginPath(); c.arc(p.x, p.y, p.r + 6, 0, TAU); c.stroke(); c.setLineDash([]); }
     });
   }
@@ -935,8 +1018,8 @@ function render(t) {
   for (const b of G.balls) {
     if (!b.on) continue;
     for (const L of LAMPS) {
-      const ox = (b.x - L.x) * R * 1.8 / LAMP_H, oy = (b.y - L.y) * R * 1.8 / LAMP_H;
-      c.globalAlpha = 0.2; c.drawImage(shadowSpr, b.x + ox - R * 1.3, b.y + oy - R * 1.3, R * 2.6, R * 2.6);
+      const ox = (b.x - L.x) * R * 0.75 / LAMP_H, oy = (b.y - L.y) * R * 0.75 / LAMP_H;
+      c.globalAlpha = 0.24 * LAMP_H / Math.hypot(b.x - L.x, b.y - L.y, LAMP_H); c.drawImage(shadowSpr, b.x + ox - R * 1.3, b.y + oy - R * 1.3, R * 2.6, R * 2.6);
     }
     c.globalAlpha = 0.45; c.drawImage(shadowSpr, b.x - R * 0.95, b.y - R * 0.95, R * 1.9, R * 1.9);
   }
@@ -968,14 +1051,15 @@ function render(t) {
     c.save(); c.beginPath(); c.rect(-OUT, -OUT - 5, W + 2 * OUT, H + 2 * OUT + 200); c.clip();
     drawCue(c, cue.x, cue.y, G.aim, G.power * 240); c.restore();
   }
-  // message banner
+  c.restore();
+  // message banner (screen-aligned, so it reads upright in both orientations)
   if (G.msg) {
-    const m = G.msg, a = Math.min(1, m.t * 5, (m.dur - m.t) * 3);
+    const m = G.msg, a = Math.min(1, m.t * 5, (m.dur - m.t) * 3), B = LAY.banner;
     if (a > 0) {
       c.save(); c.globalAlpha = a; c.font = 'bold 44px system-ui, sans-serif';
-      const tw = Math.min(W - 100, c.measureText(m.text).width + 80);
-      rr(c, W / 2 - tw / 2, 40, tw, 84, 42); c.fillStyle = 'rgba(10,14,22,0.82)'; c.fill();
-      c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(m.text, W / 2, 84, W - 140);
+      const tw = Math.min(B.max, c.measureText(m.text).width + 80);
+      rr(c, B.x - tw / 2, B.y - 42, tw, 84, 42); c.fillStyle = 'rgba(10,8,6,0.85)'; c.fill();
+      c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(m.text, B.x, B.y, B.max - 40);
       c.restore();
     }
   }
@@ -1004,7 +1088,9 @@ function update(dt) {
       G.fx.push({ ring: true, x: POCKETS[p.pocket].x, y: POCKETS[p.pocket].y, t: 0, life: 0.5 });
       if (navigator.vibrate && !G.demo) try { navigator.vibrate(15); } catch (e) { /* ignore */ }
     }
-    if (stopped(G.balls)) endShot();
+    let rl = 0; for (const b of G.balls) if (b.on) rl += Math.hypot(b.vx, b.vy);
+    Snd.roll(rl / 9000);
+    if (stopped(G.balls)) { Snd.roll(0); endShot(); }
   } else if (G.phase === 'cpu' && G.ai) {
     const ai = G.ai, pl = ai.plan; ai.t += dt;
     const cue = G.balls[0];
@@ -1024,6 +1110,8 @@ function update(dt) {
 
 // ───────────────────────────── input ─────────────────────────────
 const ptrs = new Map();
+const inRect = (d, r) => d.x >= r.x - 12 && d.x <= r.x + r.w + 12 && d.y >= r.y - 12 && d.y <= r.y + r.h + 12;
+const along = d => (LAY.power.horiz ? d.x : d.y);
 const inC = (d, b) => Math.hypot(d.x - b.x, d.y - b.y) < b.r + 10;
 function tryPlace(tx, ty) {
   const cue = G.balls[0], maxX = G.kitchen ? HEAD_X : W - R;
@@ -1035,15 +1123,15 @@ cv.addEventListener('pointerdown', e => {
   if (!G || overlayOpen()) return;
   Snd.init();
   const d = toDesign(e);
-  if (inC(d, MENU_BTN)) return openPause();
-  if (inC(d, SPIN_BTN)) { if (G.phase === 'aim' && human()) openSpin(); return; }
+  if (inC(d, LAY.menu)) return openPause();
+  if (inC(d, LAY.spin)) { if (G.phase === 'aim' && human()) openSpin(); return; }
   if (G.phase !== 'aim' || !human()) return;
   cv.setPointerCapture(e.pointerId);
-  const st = { mode: null, y0: d.y, ly: d.y };
-  if (d.x < TX - OUT - 5) st.mode = 'power';
-  else if (d.x > TX + W + OUT + 5) st.mode = 'fine';
+  const st = { mode: null, a0: along(d), la: along(d) };
+  if (inRect(d, LAY.power)) st.mode = 'power';
+  else if (inRect(d, LAY.fine)) st.mode = 'fine';
   else {
-    const tx = d.x - TX, ty = d.y - TY, cue = G.balls[0];
+    const tp = toTable(d), tx = tp.x, ty = tp.y, cue = G.balls[0];
     if (G.ballInHand && Math.hypot(tx - cue.x, ty - cue.y) < R * 2.8) { st.mode = 'place'; st.dx = cue.x - tx; st.dy = cue.y - ty; }
     else if (needCall() && pocketAt(tx, ty) >= 0) { G.called = pocketAt(tx, ty); toast('Pocket called', 1.2); return; }
     else { st.mode = 'aim'; if (Math.hypot(tx - cue.x, ty - cue.y) > R) G.aim = Math.atan2(ty - cue.y, tx - cue.x); }
@@ -1053,10 +1141,11 @@ cv.addEventListener('pointerdown', e => {
 cv.addEventListener('pointermove', e => {
   const st = ptrs.get(e.pointerId); if (!st || !G || G.phase !== 'aim') return;
   const d = toDesign(e);
-  if (st.mode === 'power') G.power = Math.max(0, Math.min(1, (d.y - st.y0) / 850));
-  else if (st.mode === 'fine') { G.aim += (d.y - st.ly) * 0.0007; G.fine += d.y - st.ly; st.ly = d.y; }
-  else if (st.mode === 'place') tryPlace(d.x - TX + st.dx, d.y - TY + st.dy);
-  else if (st.mode === 'aim') { const cue = G.balls[0], tx = d.x - TX, ty = d.y - TY; if (Math.hypot(tx - cue.x, ty - cue.y) > R) G.aim = Math.atan2(ty - cue.y, tx - cue.x); }
+  const v = along(d), tp = toTable(d);
+  if (st.mode === 'power') G.power = Math.max(0, Math.min(1, (v - st.a0) / 850));
+  else if (st.mode === 'fine') { G.aim += (v - st.la) * 0.0007; G.fine += v - st.la; st.la = v; }
+  else if (st.mode === 'place') tryPlace(tp.x + st.dx, tp.y + st.dy);
+  else if (st.mode === 'aim') { const cue = G.balls[0], tx = tp.x, ty = tp.y; if (Math.hypot(tx - cue.x, ty - cue.y) > R) G.aim = Math.atan2(ty - cue.y, tx - cue.x); }
 });
 const endPtr = e => {
   const st = ptrs.get(e.pointerId); ptrs.delete(e.pointerId);
@@ -1107,7 +1196,7 @@ $('spinPanel').addEventListener('pointerdown', e => { if (e.target.id === 'spinP
 let pendingMode = null;
 function start(mode, diff) {
   Snd.init();
-  try { const de = document.documentElement; if (de.requestFullscreen && !document.fullscreenElement) de.requestFullscreen({ navigationUI: 'hide' }).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {})).catch(() => {}); } catch (e) { /* ignore */ }
+  try { const de = document.documentElement; if (de.requestFullscreen && !document.fullscreenElement) de.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch (e) { /* ignore */ }
   pendingMode = [mode, diff];
   newGame(mode, diff); hideAll();
 }
