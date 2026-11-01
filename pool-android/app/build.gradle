@@ -1,16 +1,36 @@
 plugins { id 'com.android.application' }
 
+// Release signing comes from environment variables (set as GitHub secrets in CI).
+def ks = System.getenv('ANDROID_KEYSTORE_FILE')
+
 android {
     namespace 'com.clubhouse.eightball'
-    compileSdk 34
+    compileSdk 36
     defaultConfig {
         applicationId 'com.clubhouse.eightball'
         minSdk 24
-        targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        targetSdk 36
+        versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger() + 100)
+        versionName '1.1'
     }
-    // The game itself lives in ../../pool and is bundled as-is into the APK.
+    signingConfigs {
+        if (ks) {
+            release {
+                storeFile file(ks)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ks) signingConfig signingConfigs.release
+        }
+    }
+    // The game itself lives in ../../pool and is bundled as-is into the app.
     sourceSets { main { assets.srcDirs = ['../../pool'] } }
+    androidResources { ignoreAssetsPattern '!README.md:!privacy.html:!sw.js:!manifest.webmanifest' }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
