@@ -73,36 +73,58 @@ const Snd = {
       this.tone(240, 160, 0.07, 0.35 * vol, t);
     }
   },
-  // ── room ambience: murmuring voices and the odd glass clink, all synthesised ──
+  // ── room ambience: distant tables, the odd glass, and a soft murmur of voices ──
+  // Voices are buzzy tones shaped by vowel formants with syllable-length envelopes, so they read
+  // as far-off conversation rather than noise. Nothing here plays continuously.
   amb: null, ambLevel: 0,
   ambience(level) {
     this.ambLevel = level;
     if (!this.ac) return;
     const ac = this.ac;
     if (!this.amb) {
-      const bus = ac.createGain(); bus.gain.value = 0; bus.connect(this.out);
+      const bus = ac.createGain(); bus.gain.value = 0;
+      const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;
+      bus.connect(lp); lp.connect(this.out);
+      const VOWELS = [[730, 1090], [270, 2290], [530, 1840], [570, 840], [300, 870], [660, 1720], [440, 1020]];
       const voices = [];
-      for (let i = 0; i < 5; i++) {
-        const src = ac.createBufferSource(); src.buffer = this.noise; src.loop = true; src.playbackRate.value = 0.6 + i * 0.07;
-        const f = ac.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 350 + i * 160; f.Q.value = 3;
+      for (let i = 0; i < 4; i++) {
+        const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 100 + Math.random() * 110;
+        const f1 = ac.createBiquadFilter(), f2 = ac.createBiquadFilter(); f1.type = f2.type = 'bandpass'; f1.Q.value = 9; f2.Q.value = 12;
         const g = ac.createGain(); g.gain.value = 0;
-        src.connect(f); f.connect(g); g.connect(bus); src.start(0, Math.random());
-        voices.push({ g, f });
+        const pan = ac.createStereoPanner ? ac.createStereoPanner() : null;
+        o.connect(f1); o.connect(f2); f1.connect(g); f2.connect(g);
+        if (pan) { pan.pan.value = (i / 3) * 1.6 - 0.8; g.connect(pan); pan.connect(bus); } else g.connect(bus);
+        o.start();
+        voices.push({ o, f1, f2, g, base: o.frequency.value, talk: 0, quiet: Math.random() * 4 });
       }
       this.amb = { bus, voices };
-      setInterval(() => {                    // each "voice" rises and falls like conversation
-        if (!this.amb || !this.ambLevel) return;
-        const t = ac.currentTime;
+      let last = ac.currentTime;
+      setInterval(() => {
+        if (!this.amb || !this.ambLevel || !this.on || ac.state !== 'running') return;
+        const t = ac.currentTime, dt = t - last; last = t;
         for (const v of this.amb.voices) {
-          if (Math.random() < 0.45) {
-            v.g.gain.setTargetAtTime(Math.random() < 0.35 ? 0 : 0.25 + Math.random() * 0.75, t, 0.15 + Math.random() * 0.3);
-            v.f.frequency.setTargetAtTime(280 + Math.random() * 700, t, 0.3);
-          }
+          if (v.quiet > 0) { v.quiet -= dt; if (v.quiet <= 0) v.talk = 1 + Math.random() * 3.5; continue; }
+          if (v.talk <= 0) { v.quiet = 1.5 + Math.random() * 5; continue; }
+          // one syllable
+          const len = 0.12 + Math.random() * 0.16, [F1, F2] = VOWELS[(Math.random() * VOWELS.length) | 0], amp = 0.25 + Math.random() * 0.75;
+          v.f1.frequency.setTargetAtTime(F1, t, 0.03); v.f2.frequency.setTargetAtTime(F2, t, 0.03);
+          v.o.frequency.setTargetAtTime(v.base * (0.9 + Math.random() * 0.25), t, 0.08);
+          v.g.gain.cancelScheduledValues(t); v.g.gain.setTargetAtTime(amp, t, 0.025); v.g.gain.setTargetAtTime(0, t + len, 0.04);
+          v.talk -= len + 0.04;
         }
-        if (Math.random() < 0.035) for (const [fr, d] of [[2950, 0], [4400, 0.004]]) this.tone(fr, fr, 0.5, 0.025 * this.ambLevel, t + d);
-      }, 350);
+        // other tables and the bar, far away
+        if (Math.random() < 0.05) { const vol = 0.06 + Math.random() * 0.08, k = 1 + (Math.random() * 3 | 0);
+          for (let i = 0; i < k; i++) this.distant(t + i * (0.08 + Math.random() * 0.25), vol * (1 - i * 0.2)); }
+        if (Math.random() < 0.012) for (const [fr, d] of [[2950, 0], [4400, 0.004]]) this.tone(fr, fr, 0.45, 0.02 * this.ambLevel, t + d);
+      }, 170);
     }
-    this.amb.bus.gain.setTargetAtTime(this.on ? 0.06 * level : 0, ac.currentTime, 0.5);
+    this.amb.bus.gain.setTargetAtTime(this.on ? 0.022 * level : 0, ac.currentTime, 0.5);
+  },
+  distant(t, vol) {            // a muffled ball click from another table
+    const v = vol * this.ambLevel, p = 0.9 + Math.random() * 0.2;
+    this.tone(1300 * p, 1250 * p, 0.04, 0.5 * v, t);
+    this.tone(2100 * p, 2050 * p, 0.025, 0.25 * v, t);
+    this.tone(260, 170, 0.05, 0.3 * v, t);
   },
   // ── crowd reaction: a burst of applause, built once from hundreds of tiny claps ──
   clapBuf: null,
@@ -130,7 +152,7 @@ const Snd = {
   tick() { if (this.on && this.ac) this.tone(1800, 1800, 0.06, 0.25, this.ac.currentTime, 'square'); },
   roll(level) {
     if (!this.rollG) return;
-    const v = this.on && !(G && G.demo) ? Math.min(0.5, level) : 0;
+    const v = this.on && !(G && G.demo) ? Math.min(0.12, level * 0.35) : 0;
     this.rollG.gain.setTargetAtTime(v, this.ac.currentTime, 0.08);
   },
 };
