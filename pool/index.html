@@ -10,74 +10,189 @@
 <link rel="icon" href="icon-192.png">
 <title>Clubhouse 8-Ball</title>
 <style>
-  :root { --bg:#120a08; --panel:rgba(18,12,10,.86); --text:#f6efe4; --muted:#b9a993; --accent:#e8b64c; --brass1:#f6d98a; --brass2:#9a6a1e; --felt:#1f8a4c; }
+  :root { --bg:#120a08; --panel:rgba(18,12,10,.9); --raise:#2a1d16; --text:#f6efe4; --muted:#b9a993; --accent:#e8b64c; --brass1:#f6d98a; --brass2:#9a6a1e; --good:#3ddc84; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden;
     font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; touch-action:none; user-select:none; -webkit-user-select:none; }
   canvas { display:block; position:fixed; inset:0; width:100%; height:100%; touch-action:none; }
-  .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(8,4,2,.55); z-index:5; padding:16px; }
-  #menu.overlay { background:linear-gradient(90deg, rgba(8,4,2,.82) 0%, rgba(8,4,2,.45) 38%, rgba(0,0,0,0) 60%); justify-content:flex-start;
-    padding-left:max(4vw, env(safe-area-inset-left, 0px)); }
-  #menu .card { width:min(440px, 92vw); min-width:0; padding:16px 20px; gap:8px; }
-  #menu button { padding:11px 16px; font-size:17px; }
-  #menu .row button { font-size:13px; padding:7px 10px; }
-  details.help summary { cursor:pointer; color:var(--accent); font-weight:700; list-style:none; text-align:center; }
-  details.help[open] summary { margin-bottom:6px; }
-  @media (max-height:430px) { h1 { font-size:28px; } p.sub { margin-bottom:6px; } #menu button { padding:8px 14px; } }
+  [hidden] { display:none !important; }
+  .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(8,4,2,.6); z-index:5;
+    padding:max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
   .overlay.show { display:flex; }
-  .card { background:var(--panel); border:1px solid rgba(232,182,76,.35); border-radius:22px; padding:20px 26px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-    box-shadow:0 20px 60px rgba(0,0,0,.6); text-align:center; min-width:min(420px,92vw); max-height:94vh; overflow:auto; }
-  h1 { margin:0 0 2px; font:700 clamp(30px,7vh,52px)/1.05 Georgia,'Times New Roman',serif; letter-spacing:1px; text-transform:uppercase;
-    background:linear-gradient(180deg,var(--brass1),#d9a441 55%,var(--brass2)); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 2px 0 rgba(0,0,0,.25); }
+  .card { background:var(--panel); border:1px solid rgba(232,182,76,.35); border-radius:22px; padding:18px 22px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    box-shadow:0 20px 60px rgba(0,0,0,.6); text-align:center; width:min(460px, 100%); max-height:100%; overflow:auto; touch-action:pan-y; }
+  .card.wide { width:min(640px, 100%); }
+  #menu.overlay { background:linear-gradient(90deg, rgba(8,4,2,.82) 0%, rgba(8,4,2,.45) 38%, rgba(0,0,0,0) 60%); justify-content:flex-start; padding-left:max(4vw, env(safe-area-inset-left, 0px)); }
+  #menu .card { width:min(420px, 100%); }
+  h1 { margin:0; font:700 clamp(28px,6.5vh,50px)/1.05 Georgia,'Times New Roman',serif; letter-spacing:1px; text-transform:uppercase; text-wrap:balance;
+    background:linear-gradient(180deg,var(--brass1),#d9a441 55%,var(--brass2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   h1 span { display:block; font-size:.62em; letter-spacing:6px; }
-  h2 { margin:0 0 8px; font:700 30px Georgia,serif; color:var(--accent); }
-  p.sub { margin:0 0 16px; color:var(--muted); font-size:15px; }
-  .col { display:flex; flex-direction:column; gap:10px; }
-  .row { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  button { font:inherit; font-weight:800; font-size:18px; border:0; border-radius:16px; padding:13px 20px; cursor:pointer;
-    color:#fff; background:#3a2a20; box-shadow:0 3px 0 rgba(0,0,0,.4); }
+  h2 { margin:0 0 6px; font:700 28px Georgia,serif; color:var(--accent); text-wrap:balance; }
+  h3 { margin:4px 0 2px; font:700 20px Georgia,serif; color:var(--accent); text-align:left; }
+  p.sub { margin:0 0 12px; color:var(--muted); font-size:15px; line-height:1.4; }
+  .col { display:flex; flex-direction:column; gap:9px; }
+  .row { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+  button { font:inherit; font-weight:800; font-size:17px; border:0; border-radius:14px; padding:12px 16px; cursor:pointer; min-height:46px;
+    color:var(--text); background:#3a2a20; box-shadow:0 3px 0 rgba(0,0,0,.4); touch-action:manipulation; }
   button:active { transform:translateY(2px); box-shadow:none; }
-  button.primary { background:linear-gradient(#2fa462,#1c6e3f); border:1px solid rgba(255,255,255,.12); }
+  button:disabled { opacity:.45; cursor:default; transform:none; }
   button:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  button.primary { background:linear-gradient(#2fa462,#1c6e3f); border:1px solid rgba(255,255,255,.12); color:#fff; }
   button.gold { background:linear-gradient(var(--brass1),#c98f2c); color:#2a1700; }
-  button.small { font-size:15px; padding:9px 14px; background:#2a1d16; border:1px solid rgba(232,182,76,.25); }
-  #diffRow { display:none; } #diffRow.show { display:flex; }
-  #spinBall { width:min(260px,56vh); height:min(260px,56vh); border-radius:50%; margin:6px auto 14px; position:relative; touch-action:none;
+  button.small { font-size:14px; padding:8px 12px; min-height:40px; background:var(--raise); border:1px solid rgba(232,182,76,.25); }
+  button.on { background:linear-gradient(var(--brass1),#c98f2c); color:#2a1700; }
+  .top { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .top h2 { margin:0; }
+  .coins { font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .label { font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:6px 0 2px; text-align:left; }
+  /* career */
+  .hall { text-align:left; padding:8px 0 4px; border-top:1px solid rgba(232,182,76,.18); }
+  .hall .sub { margin:0 0 6px; font-size:13px; }
+  .opp { display:flex; align-items:center; gap:12px; width:100%; text-align:left; margin:6px 0; padding:10px 12px; background:var(--raise); font-weight:600; }
+  .opp .av { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; color:#fff; font:800 20px system-ui; flex:none; border:2px solid rgba(255,255,255,.7); }
+  .opp .who { display:flex; flex-direction:column; min-width:0; flex:1; }
+  .opp small { color:var(--muted); font-weight:500; font-size:12.5px; line-height:1.3; }
+  .opp .tags { color:var(--accent); text-transform:capitalize; }
+  .opp .st { font-weight:800; color:var(--accent); }
+  .opp.done .st { color:var(--good); }
+  /* trick shots */
+  #puzzleList { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px; }
+  .pz { display:flex; flex-direction:column; gap:2px; align-items:center; padding:10px 6px; background:var(--raise); }
+  .pz b { font:700 24px Georgia,serif; color:var(--accent); }
+  .pz span { font-size:14px; }
+  .pz small { font-size:12px; color:var(--muted); font-weight:600; }
+  .pz.done small { color:var(--good); }
+  /* shop */
+  .item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 4px; border-top:1px solid rgba(232,182,76,.15); text-align:left; }
+  .item .info { display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+  .item .act { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+  .item .act small { color:var(--muted); font-size:11px; }
+  .item small { color:var(--muted); }
+  .bar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  .bar i { font-style:normal; width:44px; }
+  .bar em { display:block; height:7px; width:160px; border-radius:4px; background:rgba(255,255,255,.1); flex:none; overflow:hidden; }
+  .bar u { display:block; height:100%; border-radius:4px; background:linear-gradient(90deg,#c98f2c,var(--brass1)); }
+  .swatch { width:120px; height:22px; border-radius:6px; border:1px solid rgba(255,255,255,.25); }
+  /* stats */
+  #statGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:6px; margin-bottom:8px; }
+  #statGrid div { background:var(--raise); border-radius:10px; padding:8px 10px; text-align:left; }
+  #statGrid small { display:block; color:var(--muted); font-size:11.5px; }
+  #statGrid b { font-size:20px; font-variant-numeric:tabular-nums; }
+  #achList { list-style:none; margin:0; padding:0; text-align:left; display:grid; gap:4px; }
+  #achList li { display:grid; grid-template-columns:28px 1fr; column-gap:6px; padding:6px 8px; border-radius:10px; opacity:.55; }
+  #achList li.got { opacity:1; background:rgba(232,182,76,.1); }
+  #achList li span { grid-row:span 2; font-size:18px; }
+  #achList small { color:var(--muted); font-size:12px; }
+  /* settings */
+  [data-set] { display:flex; justify-content:space-between; align-items:center; width:100%; background:var(--raise); font-weight:600; }
+  [data-set] b { color:var(--accent); }
+  /* results */
+  #overRewards { list-style:none; padding:0; margin:0 0 10px; color:var(--accent); font-weight:700; }
+  /* spin picker */
+  #spinBall { width:min(260px,52vh); height:min(260px,52vh); border-radius:50%; margin:6px auto 14px; position:relative; touch-action:none;
     background:radial-gradient(circle at 35% 30%, #fff 0%, #f1efe6 40%, #b9b6ab 100%); box-shadow:0 10px 30px rgba(0,0,0,.5); cursor:crosshair; }
   #spinBall::before, #spinBall::after { content:""; position:absolute; background:rgba(0,0,0,.12); }
   #spinBall::before { left:50%; top:10%; bottom:10%; width:2px; }
   #spinBall::after { top:50%; left:10%; right:10%; height:2px; }
   #spinDot { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; border-radius:50%; background:#e02424; border:3px solid #fff; left:50%; top:50%; pointer-events:none; }
+  /* tip box (tutorial & trick shots) and achievement notes */
+  #tip { position:fixed; left:50%; transform:translateX(-50%); bottom:max(10px, env(safe-area-inset-bottom, 0px)); z-index:4; width:min(560px, calc(100% - 32px));
+    background:rgba(18,12,10,.9); border:1px solid rgba(232,182,76,.5); border-radius:14px; padding:10px 14px; font-size:15px; line-height:1.4; text-align:center; cursor:pointer; }
+  @media (orientation:landscape) { #tip { width:min(560px, 52vw); font-size:14px; padding:8px 12px; } }
+  @media (orientation:portrait) { #tip { bottom:auto; top:calc(max(8px, env(safe-area-inset-top, 0px)) + 11vh); } }
+  #notes { position:fixed; top:max(10px, env(safe-area-inset-top, 0px)); right:max(12px, env(safe-area-inset-right, 0px)); z-index:30; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
+  .note { background:linear-gradient(var(--brass1),#c98f2c); color:#2a1700; font-weight:800; border-radius:12px; padding:10px 14px; box-shadow:0 8px 24px rgba(0,0,0,.5);
+    animation:in .35s ease-out; transition:opacity .5s, transform .5s; }
+  .note.out { opacity:0; transform:translateX(30px); }
+  @keyframes in { from { opacity:0; transform:translateX(30px); } }
+  @media (prefers-reduced-motion:reduce) { .note { animation:none; transition:none; } }
   @media (orientation:portrait) {
-    #menu.overlay { justify-content:center; align-items:flex-end; padding:16px max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
-      background:linear-gradient(0deg, rgba(8,4,2,.85) 0%, rgba(8,4,2,.4) 45%, rgba(0,0,0,0) 65%); }
+    #menu.overlay { justify-content:center; align-items:flex-end; background:linear-gradient(0deg, rgba(8,4,2,.85) 0%, rgba(8,4,2,.4) 50%, rgba(0,0,0,0) 70%); }
     #menu .card { width:min(520px, 100%); }
   }
-  .help { color:var(--muted); font-size:13px; line-height:1.45; margin-top:14px; text-align:left; }
-  .help b { color:var(--text); }
+  @media (max-height:430px) { h1 { font-size:26px; } p.sub { margin-bottom:6px; } button { min-height:40px; padding:9px 14px; } .card { padding:12px 16px; } }
+  @media (min-width:900px) and (min-height:700px) { button { font-size:19px; min-height:52px; } .card { width:min(520px, 100%); } .card.wide { width:min(720px, 100%); } }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="tip" hidden></div>
+<div id="notes" aria-live="polite"></div>
 
 <div id="menu" class="overlay">
   <div class="card col">
     <h1>Clubhouse <span>8-Ball</span></h1>
-    <p class="sub">Offline · no ads · no accounts</p>
-    <button class="primary" id="btnCpu">Play vs Computer</button>
-    <div class="row" id="diffRow">
-      <button class="small" data-diff="0">Easy</button>
-      <button class="small" data-diff="1">Medium</button>
-      <button class="small" data-diff="2">Hard</button>
-    </div>
-    <button class="primary" id="btn2p">2 Players (pass &amp; play)</button>
-    <button id="btnPractice">Practice</button>
-    <div class="row"><button class="small tSound"></button><button class="small tGuide"></button><button class="small tCloth"></button><button class="small tCue"></button></div>
-    <details class="help"><summary>How to play</summary>
-      <b>Aim:</b> touch / drag anywhere on the table. <b>Fine aim:</b> drag the wheel on the right.
-      <b>Shoot:</b> pull the power bar on the left down and let go. <b>Spin:</b> tap the cue ball top-right.
-      <b>Ball in hand:</b> drag the cue ball. On the 8-ball, tap a pocket to call it.
-    </details>
+    <p class="sub"><span class="coins"></span> · offline · no ads</p>
+    <button id="btnTutorial">Tutorial</button>
+    <button class="primary" id="btnCareer">Career</button>
+    <div class="grid2"><button class="primary" id="btnQuick">Quick Play</button><button id="btnPuzzles">Trick Shots</button></div>
+    <div class="grid3"><button class="small" id="btnShop">Shop</button><button class="small" id="btnStats">Stats</button><button class="small" id="btnSettings">Settings</button></div>
+    <button class="small" id="btnPractice">Practice table</button>
+  </div>
+</div>
+
+<div id="quick" class="overlay" data-game="8ball" data-style="balanced">
+  <div class="card col">
+    <div class="top"><h2>Quick Play</h2><button class="small" data-back="menu">Back</button></div>
+    <div class="label">Game</div>
+    <div class="grid3"><button class="small on" data-game="8ball">8-Ball</button><button class="small" data-game="9ball">9-Ball</button><button class="small" data-game="straight">Straight Pool</button></div>
+    <div class="label">Opponent style</div>
+    <div class="grid2"><button class="small on" data-style="balanced">All-rounder</button><button class="small" data-style="aggressive">Shot-maker</button>
+      <button class="small" data-style="safe">Safety player</button><button class="small" data-style="banker">Bank specialist</button></div>
+    <div class="label">Play the computer</div>
+    <div class="grid2"><button class="primary" data-skill="0">Rookie</button><button class="primary" data-skill="1">Regular</button><button class="primary" data-skill="2">Shark</button><button class="primary" data-skill="3">Pro</button></div>
+    <div class="label">Or</div>
+    <button id="btn2p">2 Players on this phone</button>
+  </div>
+</div>
+
+<div id="career" class="overlay">
+  <div class="card wide col">
+    <div class="top"><h2>Career</h2><span class="coins"></span><button class="small" data-back="menu">Back</button></div>
+    <p class="sub" style="text-align:left;margin:0">Beat each player to unlock the next. Clear a hall to move up to a bigger room.</p>
+    <div id="careerList"></div>
+  </div>
+</div>
+
+<div id="puzzles" class="overlay">
+  <div class="card wide col">
+    <div class="top"><h2>Trick Shots</h2><button class="small" data-back="menu">Back</button></div>
+    <p class="sub" id="puzzleCount"></p>
+    <div id="puzzleList"></div>
+  </div>
+</div>
+
+<div id="shop" class="overlay">
+  <div class="card wide col">
+    <div class="top"><h2>Shop</h2><span class="coins"></span><button class="small" data-back="menu">Back</button></div>
+    <div class="grid3"><button class="small on" data-tab="cue">Cues</button><button class="small" data-tab="cloth">Cloths</button><button class="small" data-tab="room">Rooms</button></div>
+    <p class="sub" id="shopNote" style="margin:4px 0 0"></p>
+    <div id="shopList"></div>
+    <p class="sub" style="margin:8px 0 0">Coins are earned by playing: wins, career prizes, trick shots and achievements. There is nothing to buy with real money.</p>
+  </div>
+</div>
+
+<div id="stats" class="overlay">
+  <div class="card wide col">
+    <div class="top"><h2>Stats</h2><button class="small" data-back="menu">Back</button></div>
+    <div id="statGrid"></div>
+    <div class="top"><h3>Achievements</h3><span class="coins" id="achCount"></span></div>
+    <ul id="achList"></ul>
+  </div>
+</div>
+
+<div id="settings" class="overlay">
+  <div class="card col">
+    <div class="top"><h2>Settings</h2><button class="small" data-back="settings">Back</button></div>
+    <button data-set="sound"></button>
+    <button data-set="ambience"></button>
+    <button data-set="haptics"></button>
+    <button data-set="guide"></button>
+    <button data-set="clock"></button>
+    <button data-set="bigNums"></button>
+    <button data-set="lefty"></button>
   </div>
 </div>
 
@@ -85,8 +200,8 @@
   <div class="card col">
     <h2>Paused</h2>
     <button class="primary" id="btnResume">Resume</button>
-    <button id="btnRestart">Restart game</button>
-    <div class="row"><button class="small tSound"></button><button class="small tGuide"></button><button class="small tCloth"></button><button class="small tCue"></button></div>
+    <button id="btnRestart">Restart</button>
+    <button id="btnPauseSettings">Settings</button>
     <button id="btnQuit">Main menu</button>
   </div>
 </div>
@@ -95,21 +210,23 @@
   <div class="card col">
     <h2 id="overTitle">Game over</h2>
     <p class="sub" id="overReason"></p>
-    <button class="gold" id="btnAgain">Play again</button>
-    <button id="btnMenu">Main menu</button>
+    <ul id="overRewards" hidden></ul>
+    <div class="col" id="overBtns"></div>
   </div>
 </div>
 
 <div id="spinPanel" class="overlay">
   <div class="card">
     <h2>Cue ball spin</h2>
-    <p class="sub">Tap where the cue hits the ball — top = follow, bottom = draw, sides = english</p>
+    <p class="sub">Tap where the cue hits the ball: top = follow, bottom = draw, sides = english</p>
     <div id="spinBall"><div id="spinDot"></div></div>
     <div class="row"><button class="small" id="spinReset">Center</button><button class="primary" id="spinDone">Done</button></div>
   </div>
 </div>
 
-
+<script src="core.js"></script>
+<script src="audio.js"></script>
+<script src="render.js"></script>
 <script src="game.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {

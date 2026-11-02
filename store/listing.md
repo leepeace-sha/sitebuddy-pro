@@ -10,13 +10,14 @@ Rack 'em up in a warm, lamp-lit pool hall and play real 8-ball, with no ads,
 no pop-ups and no internet needed.
 
 FEATURES
-• Realistic ball physics with follow, draw and side spin
-• Aim guide with ghost ball and deflection lines, plus a fine-aim wheel
-• Full standard 8-ball rules: open table, solids and stripes, fouls, ball in hand, call your pocket on the 8
-• Play the computer on Easy, Medium or Hard
-• Pass-and-play 2-player mode on one device
-• Practice mode to work on your shots
-• Choose your cloth (green, blue, burgundy, slate) and your cue
+• Career mode: climb from a neighbourhood bar to the Grand Championship against nine opponents, each with their own style
+• 8-ball, 9-ball and straight pool, against the computer or a friend on the same phone
+• 12 trick-shot puzzles: combinations, bank shots, kick shots and more
+• Realistic physics: follow, draw, side spin, swerve and pocket rattles
+• Earn coins by playing and spend them on cues, cloths and rooms (no real-money purchases)
+• Stats, 25 achievements and slow-motion replays of your best shots
+• Guided tutorial for new players
+• Play upright or sideways; left-handed controls, large ball numbers, optional shot clock
 • Works completely offline. No ads. No accounts. No data collected.
 
 **Category:** Games > Sports

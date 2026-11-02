@@ -5,6 +5,10 @@ import android.app.Activity;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.webkit.JavascriptInterface;
+import org.json.JSONArray;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -31,10 +35,28 @@ public class MainActivity extends Activity {
         s.setDomStorageEnabled(true);
         s.setAllowFileAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
+        web.addJavascriptInterface(new Haptics(), "AndroidHaptics");
         setContentView(web);
         hideSystemUi();
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl("file:///android_asset/index.html");
+    }
+
+    /** Lets the game trigger short vibrations; the WebView itself ignores navigator.vibrate. */
+    class Haptics {
+        @JavascriptInterface
+        @SuppressWarnings("deprecation")
+        public void vibrate(String json) {
+            try {
+                JSONArray a = new JSONArray(json);
+                long[] p = new long[a.length() + 1];
+                for (int i = 0; i < a.length(); i++) p[i + 1] = Math.min(400, Math.max(1, a.getLong(i)));
+                Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                if (v == null || !v.hasVibrator()) return;
+                if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createWaveform(p, -1));
+                else v.vibrate(p, -1);
+            } catch (Exception ignored) { }
+        }
     }
 
     @SuppressWarnings("deprecation")
