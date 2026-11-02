@@ -7,7 +7,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('c8b_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('c8b_' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
 };
-const SET = Object.assign({ sound: store.get('sound', true), ambience: true, haptics: true, guide: store.get('guide', true), clock: 0, bigNums: false, lefty: false }, store.get('settings', {}));
+const SET = Object.assign({ sound: store.get('sound', true), haptics: true, guide: store.get('guide', true), clock: 0, bigNums: false, lefty: false }, store.get('settings', {}));
 let longGuide = SET.guide;
 const saveSet = () => store.set('settings', SET);
 
@@ -102,7 +102,6 @@ const turnMsg = i => (G.players[i].name === 'You' ? 'Your turn' : `${G.players[i
 const handMsg = i => (G.players[i].name === 'You' ? 'You have ball in hand' : `${G.players[i].name} has ball in hand`);
 const tracked = () => G && !G.demo && G.vs !== '2p' && !G.players[G.turn].cpu;
 function toast(text, dur = 2.4) { if (G && !G.demo) G.msg = { text, t: 0, dur }; }
-const ambLevel = () => (SET.ambience ? { bar: 1, club: 0.7, arena: 1.5, neon: 0.9 }[curRoom().kind] : 0);
 
 function newGame(o) {
   const solo = o.vs === 'solo';
@@ -124,7 +123,6 @@ function newGame(o) {
   roomOverride = o.room === undefined ? -1 : o.room;
   const rk = roomOverride >= 0 ? roomOverride : roomIdx;
   if (rk !== lastRoom) { lastRoom = rk; drawStatic(); }
-  Snd.ambience(ambLevel());
   setTip(o.game === 'puzzle' ? G.puzzle.text : G.tut ? G.tut.tip : null);
   if (!G.demo && o.game !== 'puzzle' && o.game !== 'tutorial') {
     const mt = G.match ? `Frame ${G.match.score[0] + G.match.score[1] + 1} · ` : '';
@@ -200,7 +198,7 @@ function endShot() {
   const banks = objPots.filter(p => p.bank).length;
   if (ev.maxHit > 3200 && G.isBreak) buzz([25, 30, 25]);
   // great shot: offer a replay and let the room react
-  if (!scratched && ((!G.isBreak && objPots.length >= 2) || banks)) { G.replayOffer = 7; Snd.crowd(0.7); }
+  if (!scratched && ((!G.isBreak && objPots.length >= 2) || banks)) { G.replayOffer = 7; }
   if (trk) {
     const S = prof.stats; S.potted += objPots.length; S.banks += banks;
     if (!G.isBreak) S.bestMulti = Math.max(S.bestMulti, objPots.length);
@@ -266,7 +264,7 @@ function finishGame(winner, reason, res = {}) {
   G.over = true; G.phase = 'over';
   if (G.demo) { setTimeout(() => { if (G && G.demo) startDemo(); }, 2500); return; }
   const youWon = winner === 0 && G.vs === 'cpu', S = prof.stats;
-  Snd.crowd(youWon || G.vs === '2p' ? 1.3 : 0.4); buzz(youWon ? [40, 60, 40] : 30);
+  buzz(youWon ? [40, 60, 40] : 30);
   if (G.vs === 'cpu') {
     S.played++;
     if (youWon) {
@@ -341,7 +339,7 @@ function endPuzzle() {
 }
 function puzzleSolved() {
   const k = PUZZLES.indexOf(G.puzzle), P = G.puzzle;
-  G.over = true; G.phase = 'over'; Snd.crowd(1); setTip(null);
+  G.over = true; G.phase = 'over'; setTip(null);
   let reason = 'Nicely done.';
   if (!prof.puzzles.includes(k)) {
     prof.puzzles.push(k); addCoins(P.coins); reason = `Nicely done. +${P.coins} coins.`;
@@ -413,7 +411,7 @@ function startReplay(after) {
 }
 function endReplay() {
   const rp = G.rp; if (!rp) return;
-  G.balls = rp.saved; G.phase = rp.savedPhase; G.aim = rp.savedAim; G.rp = null; G.sinking = []; Snd.roll(0);
+  G.balls = rp.saved; G.phase = rp.savedPhase; G.aim = rp.savedAim; G.rp = null; G.sinking = [];
   if (rp.after) rp.after();
 }
 
@@ -458,9 +456,7 @@ function update(dt) {
       if (live) buzz(18);
     }
     let rl = 0; for (const b of G.balls) if (b.on) rl += Math.hypot(b.vx, b.vy);
-    Snd.roll(rl / 9000 * (live ? 1 : 0.6));
     if (stopped(G.balls)) {
-      Snd.roll(0);
       if (live) endShot();
       else if ((G.rp.hold += dt) > 0.9) endReplay();
     }
@@ -501,7 +497,7 @@ function tryPlace(tx, ty) {
 }
 function pocketAt(tx, ty) { for (let i = 0; i < 6; i++) if (Math.hypot(tx - POCKETS[i].x, ty - POCKETS[i].y) < 90) return i; return -1; }
 cv.addEventListener('pointerdown', e => {
-  Snd.init(); Snd.ambience(ambLevel());
+  Snd.init();
   if (!G || overlayOpen() || G.demo) return;
   if (G.phase === 'replay') return endReplay();
   const d = toDesign(e);
@@ -664,7 +660,7 @@ function openShop(tab = shopTab) {
   $('shopNote').textContent = tab === 'room' ? 'Rooms change the menu and quick play. Career matches are played in each hall\'s own room.' : tab === 'cue' ? 'Better cues give a longer aim guide, more spin or more power.' : '';
   syncCoins(); show('shop');
 }
-function refreshLook() { lastRoom = roomOverride >= 0 ? roomOverride : roomIdx; drawStatic(); Snd.ambience(ambLevel()); }
+function refreshLook() { lastRoom = roomOverride >= 0 ? roomOverride : roomIdx; drawStatic(); }
 function openStats() {
   const S = prof.stats, rate = S.played ? Math.round(100 * S.won / S.played) : 0;
   const rows = [['Games vs computer', S.played], ['Wins', S.won], ['Win rate', S.played ? rate + '%' : '—'], ['Best win streak', S.bestStreak],
@@ -680,7 +676,7 @@ function openStats() {
 let settingsBack = 'menu';
 function openSettings(from) { settingsBack = from; syncToggles(); show('settings'); }
 function syncToggles() {
-  const lab = { sound: ['Sound', SET.sound ? 'On' : 'Off'], ambience: ['Room ambience', SET.ambience ? 'On' : 'Off'], haptics: ['Vibration', SET.haptics ? 'On' : 'Off'],
+  const lab = { sound: ['Sound', SET.sound ? 'On' : 'Off'], haptics: ['Vibration', SET.haptics ? 'On' : 'Off'],
     guide: ['Aim guide', SET.guide ? 'Long' : 'Short'], clock: ['Shot clock', SET.clock ? SET.clock + ' s' : 'Off'], bigNums: ['Large ball numbers', SET.bigNums ? 'On' : 'Off'],
     lefty: ['Controls', SET.lefty ? 'Left-handed' : 'Right-handed'] };
   document.querySelectorAll('[data-set]').forEach(b => { const [k, v] = lab[b.dataset.set]; b.innerHTML = `<span>${k}</span><b>${v}</b>`; });
@@ -690,7 +686,7 @@ document.querySelectorAll('[data-set]').forEach(b => { b.onclick = () => {
   if (k === 'clock') SET.clock = SET.clock === 0 ? 30 : SET.clock === 30 ? 15 : 0; else SET[k] = !SET[k];
   saveSet(); Snd.on = SET.sound; longGuide = SET.guide; bigNums = SET.bigNums;
   if (k === 'lefty') { lefty = SET.lefty; applyHand(); resize(); }
-  if (k === 'sound' || k === 'ambience') { Snd.init(); Snd.ambience(ambLevel()); }
+  if (k === 'sound') Snd.init();
   if (k === 'clock' && G && !G.demo && !G.solo) { G.clock = SET.clock; G.clockLeft = SET.clock; }
   if (k === 'haptics' && SET.haptics) buzz(30);
   syncToggles();

@@ -46,7 +46,7 @@ via GitHub Pages at `/pool/`), open it in Chrome on Android and choose
 - **Stats and achievements:** win rate, longest run, bank shots and more; 25 achievements with coin rewards.
 - **Replays:** great shots offer a slow-motion replay, and every result screen can replay the last shot.
 - **Physics:** follow and draw, side spin off the cushions, swerve, cut-induced throw, pocket rattles.
-- **Settings:** sound, room ambience and crowd reactions, vibration, aim-guide length, shot clock
+- **Settings:** sound, vibration, aim-guide length, shot clock
   (off, 30 s, 15 s), large ball numbers for colour-blind players, left-handed controls.
 - Portrait and landscape layouts; the Android back button opens the pause menu.
 
