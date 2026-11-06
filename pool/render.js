@@ -40,7 +40,11 @@ function applyHand() {
 }
 function tableXform(c) { if (PORT) { c.translate(PCX, PCY); c.rotate(-Math.PI / 2); c.translate(-W / 2, -H / 2); } else c.translate(TX, TY); }
 const toTable = d => (PORT ? { x: W / 2 - (d.y - PCY), y: H / 2 + (d.x - PCX) } : { x: d.x - TX, y: d.y - TY });
-const toDesign = e => { const r = cv.getBoundingClientRect(); return { x: ((e.clientX - r.left) * dpr - offX) / scale, y: ((e.clientY - r.top) * dpr - offY) / scale }; };
+// map a touch to design units using the canvas's real on-screen size (robust while the phone rotates)
+const toDesign = e => {
+  const r = cv.getBoundingClientRect(), kx = cv.width / (r.width || 1), ky = cv.height / (r.height || 1);
+  return { x: ((e.clientX - r.left) * kx - offX) / scale, y: ((e.clientY - r.top) * ky - offY) / scale };
+};
 
 function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
 function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : c.rect(x, y, w, h); }

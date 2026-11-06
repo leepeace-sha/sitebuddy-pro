@@ -138,19 +138,8 @@ function step(S, dt, ev) {
     let k = -1;
     for (let i = 0; i < 6; i++) {
       const p = POCKETS[i], dx = b.x - p.x, dy = b.y - p.y;
-      if (dx * dx + dy * dy < p.r * p.r) {
-        // a fast ball arriving off-line rattles in the jaws instead of dropping
-        const sp = Math.hypot(b.vx, b.vy), cosA = sp ? -(b.vx * p.nx + b.vy * p.ny) / sp : 1;
-        const vmax = p.side ? 2600 * Math.max(0.12, cosA * cosA * cosA) : 3300 * (0.35 + 0.65 * cosA * cosA);
-        if (sp > vmax) {
-          const d = Math.sqrt(dx * dx + dy * dy) || 1, rx = dx / d, ry = dy / d, vn = b.vx * rx + b.vy * ry;
-          if (vn > 0) { b.vx -= 1.45 * vn * rx; b.vy -= 1.45 * vn * ry; b.vx *= 0.7; b.vy *= 0.7; }
-          b.x = p.x + rx * (p.r + 0.5); b.y = p.y + ry * (p.r + 0.5);
-          if (ev.cush) ev.cush.push(sp * 0.5);
-          continue;
-        }
-        k = i; break;
-      }
+      // a ball whose centre reaches the pocket always drops (rattles come only from the jaw cushions)
+      if (dx * dx + dy * dy < p.r * p.r) { k = i; break; }
     }
     if (k < 0 && (b.x < -R || b.x > W + R || b.y < -R || b.y > H + R)) {
       let bd = Infinity;

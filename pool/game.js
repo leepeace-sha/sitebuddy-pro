@@ -289,16 +289,18 @@ function finishGame(winner, reason, res = {}) {
   if (G.match) {
     const m = G.match; m.score[winner]++;
     if (m.score[winner] < m.raceTo) {
-      setTimeout(() => showResult({
+      const g1 = G;
+      setTimeout(() => G === g1 && showResult({
         title: `${G.players[winner].me ? 'You win' : name + ' wins'} the frame`, reason: `${reason}. Match ${m.score[0]}–${m.score[1]}, first to ${m.raceTo}.`,
         primary: ['Next frame', () => { newGame(Object.assign({}, G.opts, { match: m, breaker: 1 - G.breaker })); hideAll(); }], quit: true,
       }), 900);
       return;
     }
-    if (m.tour) { setTimeout(() => tourMatchDone(winner === 0), 1600); return; }
+    if (m.tour) { const g1 = G; setTimeout(() => { if (G === g1) tourMatchDone(winner === 0); }, 1600); return; }
   }
   const title = G.vs === 'cpu' ? (youWon ? 'You win! 🏆' : `${name} wins`) : `${name} wins! 🏆`;
-  setTimeout(() => showResult({ title, reason, primary: ['Play again', () => { newGame(Object.assign({}, G.opts, { breaker: 1 - G.breaker })); hideAll(); }] }), 1600);
+  const g2 = G;
+  setTimeout(() => G === g2 && showResult({ title, reason, primary: ['Play again', () => { newGame(Object.assign({}, G.opts, { breaker: 1 - G.breaker })); hideAll(); }] }), 1600);
 }
 
 // ───────────────────────────── trick shots ─────────────────────────────
@@ -735,13 +737,18 @@ window.__back = () => {
 
 // ───────────────────────────── main loop ─────────────────────────────
 let last = performance.now();
+let frameErr = 0;
 function frame(now) {
+  requestAnimationFrame(frame);                   // schedule first: an error below can never freeze the game
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  update(dt); render(now / 1000);
-  requestAnimationFrame(frame);
+  // after a rotation some phones report the new size late: re-layout whenever the canvas is out of step
+  const want = Math.round(window.innerWidth * Math.min(2, window.devicePixelRatio || 1));
+  if (Math.abs(cv.width - want) > 2 || Math.abs(cv.height - Math.round(window.innerHeight * Math.min(2, window.devicePixelRatio || 1))) > 2) resize();
+  try { update(dt); render(now / 1000); } catch (e) { if (frameErr++ < 5) console.error(e); }
 }
 window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+window.addEventListener('orientationchange', () => { setTimeout(resize, 200); setTimeout(resize, 600); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 resize(); goMenu(); requestAnimationFrame(frame);
 
 // test hooks (harmless in production)
