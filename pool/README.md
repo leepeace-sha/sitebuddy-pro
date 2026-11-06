@@ -33,27 +33,29 @@ via GitHub Pages at `/pool/`), open it in Chrome on Android and choose
   You **lose** if you pot the 8 early, into the wrong pocket, or on a foul.
 
 ## What's in the game
-- **Career:** three pool halls (The Corner Pocket, Kingsley Club, Grand Championship), three opponents each.
-  Every opponent has a skill level and a playing style (shot-maker, safety player, bank specialist,
-  all-rounder). Halls 2 and 3 are races to 2 and 3 frames. Clearing a hall opens the next room.
-- **Quick play:** 8-ball, 9-ball or straight pool (race to 25) against the computer at four skill levels and
-  four styles, or two players on one phone.
-- **Trick shots:** 12 set-up puzzles (combinations, banks, kicks, two-in-one, position play), unlocked in order.
-  Every puzzle was checked for solutions by a brute-force search on the real physics.
-- **Tutorial:** a five-step guided lesson: aim, power, fine aim, backspin and ball in hand.
-- **Coins and shop:** coins come only from playing (wins, career prize money, trick shots, achievements).
-  They buy cues with real differences (aim-guide length, spin, power), cloths and rooms. No real money.
-- **Stats and achievements:** win rate, longest run, bank shots and more; 25 achievements with coin rewards.
-- **Replays:** great shots offer a slow-motion replay, and every result screen can replay the last shot.
-- **Physics:** follow and draw, side spin off the cushions, swerve, cut-induced throw, pocket rattles.
-- **Settings:** sound, vibration, aim-guide length, shot clock
-  (off, 30 s, 15 s), large ball numbers for colour-blind players, left-handed controls.
-- Portrait and landscape layouts; the Android back button opens the pause menu.
+- **Rivals with personalities:** 12 characters, each with a portrait drawn in code, a playing style, a
+  skill level and their own lines. They greet you, gloat, sulk, taunt and react to your shots in speech
+  bubbles, with faces that change expression and cartoon voice blips (switchable).
+- **World Tour:** four knockout tournaments (Corner Pocket Cup, Kingsley Club Open, Neon Nights 9-Ball,
+  Grand Championship). Eight players, quarter-final to final, entry fee and prize money, a live bracket
+  with the other matches played out, and trophies. Winning an event opens the next venue. The final boss
+  is The Queen.
+- **VS screen** before every match, with both portraits and the rival's opening line.
+- **Your player:** pick a name and build your character in the locker (skin, hair, facial hair,
+  headwear, glasses, outfit, colours, background). Some items cost credits; some are tour trophies only.
+- **Credits and progression:** credits for wins, tour prizes, trick shots, achievements, level-ups and a
+  7-day daily bonus. XP and levels with ranks from Rookie to Legend.
+- **Cues:** six cues with different aim, spin and power, each upgradable to ★3 per stat.
+- **Quick chat:** send a line ("Nice shot!", "Is that all you've got?") and your rival answers in character.
+- **Quick play:** 8-ball, 9-ball or straight pool against a random rival at four levels, or two players.
+- **Trick shots, tutorial, replays, stats and 26 achievements, shot clock, accessibility options.**
 
 ## Code layout
 - `core.js`: table geometry, physics, rules for each game type and the computer player (no DOM; testable in Node)
 - `render.js`: rooms, table, balls, cue and HUD, all drawn on the canvas
-- `audio.js`: synthesised sound, room ambience and crowd
+- `audio.js`: synthesised table sounds and character voice blips
+- `people.js`: portrait renderer, the cast of rivals and their lines, speech bubbles
+- `meta.js`: World Tour, VS screen, levels, daily bonus, cue upgrades, locker, quick chat
 - `game.js`: game flow, career, trick shots, tutorial, shop, stats, replays, input and menus
 
 ## Publishing on Google Play

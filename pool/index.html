@@ -14,7 +14,8 @@
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { margin:0; height:100%; background:var(--bg); color:var(--text); overflow:hidden;
     font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; touch-action:none; user-select:none; -webkit-user-select:none; }
-  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; touch-action:none; }
+  #c { display:block; position:fixed; inset:0; width:100%; height:100%; touch-action:none; }
+  canvas { display:block; }
   [hidden] { display:none !important; }
   .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(8,4,2,.6); z-index:5;
     padding:max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
@@ -47,6 +48,80 @@
   .top h2 { margin:0; }
   .coins { font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; white-space:nowrap; }
   .label { font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:6px 0 2px; text-align:left; }
+  /* player card on the menu */
+  #meCard { display:flex; align-items:center; gap:12px; text-align:left; background:var(--raise); border-radius:16px; padding:8px 12px; cursor:pointer; border:1px solid rgba(232,182,76,.3); }
+  #meCard canvas, .portrait { border-radius:50%; flex:none; }
+  #meCard .who { flex:1; min-width:0; }
+  #meCard b { display:block; font-size:18px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #meCard small { color:var(--muted); font-size:13px; }
+  .xp { height:7px; background:rgba(255,255,255,.12); border-radius:4px; overflow:hidden; margin-top:4px; }
+  .xp i { display:block; height:100%; background:linear-gradient(90deg,#3ddc84,#a3f7bf); }
+  /* World Tour */
+  .venue { display:flex; align-items:center; gap:12px; padding:10px 6px; border-top:1px solid rgba(232,182,76,.18); text-align:left; }
+  .venue canvas { width:64px; height:64px; border-radius:50%; flex:none; }
+  .venue .vinfo { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .venue small { color:var(--muted); font-size:12.5px; line-height:1.3; }
+  .venue .tags { color:var(--accent); }
+  .venue.locked { opacity:.55; }
+  /* bracket */
+  #brCols { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px; align-items:stretch; }
+  #bracket h2 { font-size:24px; }
+  .brCol { display:flex; flex-direction:column; justify-content:space-around; gap:10px; min-width:0; height:100%; }
+  .brCol h4 { margin:0; font:700 13px system-ui; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+  .brMatch { background:var(--raise); border-radius:10px; padding:2px; border:1px solid rgba(232,182,76,.2); }
+  .brP { display:flex; align-items:center; gap:6px; padding:2px 6px; font-size:13px; font-weight:700; border-radius:7px; min-width:0; line-height:1.2; }
+  .brP canvas { width:22px !important; height:22px !important; }
+  .brCol { gap:6px !important; }
+  .brP span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .brP canvas { border-radius:50%; flex:none; }
+  .brP.me { color:var(--accent); }
+  .brP.won { background:rgba(61,220,132,.16); }
+  .brP.lost { opacity:.45; text-decoration:line-through; }
+  .brP.tbd { color:var(--muted); justify-content:center; }
+  #brChamp { color:var(--accent); font:700 20px Georgia,serif; }
+  /* VS screen */
+  #vs.overlay { background:radial-gradient(ellipse at center, rgba(60,25,10,.92), rgba(5,3,2,.97)); }
+  #vs .vsWrap { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px; width:min(820px, 100%); text-align:center; }
+  #vs .side { display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; }
+  #vs canvas { width:min(220px, 30vh, 34vw); height:min(220px, 30vh, 34vw); border-radius:50%; box-shadow:0 0 0 5px #e8b64c, 0 20px 50px rgba(0,0,0,.7); }
+  #vs .nm { font:700 clamp(20px,3.6vh,32px) Georgia,serif; color:#fff; }
+  #vs .tt { color:var(--muted); font-size:14px; }
+  #vs .vsx { font:900 clamp(36px,min(10vh,12vw),92px)/1 Georgia,serif; color:#e8b64c; text-shadow:0 0 30px rgba(232,182,76,.6), 0 4px 0 #6b3d0c; }
+  #vsStage { color:var(--accent); font-weight:800; letter-spacing:1.5px; text-transform:uppercase; font-size:14px; }
+  #vsQuote { background:#fffaf0; color:#1d140f; border-radius:16px; padding:10px 14px; font-weight:700; max-width:min(560px, 92vw); margin:10px auto 0; position:relative; }
+  #vsQuote::before { content:""; position:absolute; top:-12px; right:22%; border:12px solid transparent; border-top:0; border-bottom-color:#fffaf0; }
+  #vs .vsBottom { display:flex; flex-direction:column; align-items:center; gap:10px; margin-top:10px; }
+  #vs.anim .left { animation:slideL .55s cubic-bezier(.2,.9,.3,1.2) both; }
+  #vs.anim .right { animation:slideR .55s cubic-bezier(.2,.9,.3,1.2) both; }
+  #vs.anim .vsx { animation:slam .5s .35s cubic-bezier(.2,.9,.3,1.4) both; }
+  #vs.anim #vsQuote { animation:pop .4s .7s both; }
+  @keyframes slideL { from { transform:translateX(-60vw); opacity:0; } }
+  @keyframes slideR { from { transform:translateX(60vw); opacity:0; } }
+  @keyframes slam { from { transform:scale(3); opacity:0; } }
+  @keyframes pop { from { transform:scale(.6); opacity:0; } }
+  @media (prefers-reduced-motion:reduce) { #vs.anim * { animation:none !important; } }
+  /* locker */
+  #locker .lockTop { display:flex; gap:14px; align-items:center; text-align:left; }
+  #lockPreview { width:120px; height:120px; border-radius:50%; flex:none; box-shadow:0 0 0 4px #e8b64c; }
+  #lockName { font:inherit; font-size:18px; font-weight:700; padding:8px 12px; border-radius:12px; border:1px solid rgba(232,182,76,.4); background:#1a120d; color:var(--text); width:100%; }
+  #lockTabs { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+  #lockTabs button { flex:none; }
+  #lockGrid { display:grid; grid-template-columns:repeat(auto-fill, minmax(90px, 1fr)); gap:8px; }
+  .opt { display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px; background:var(--raise); min-height:0; }
+  .opt canvas { border-radius:50%; }
+  .opt small { font-size:12px; color:var(--muted); font-weight:700; }
+  .opt.on { outline:3px solid var(--accent); }
+  #lockTrophies { display:flex; gap:10px; flex-wrap:wrap; }
+  .tro { display:flex; flex-direction:column; align-items:center; font-size:26px; filter:grayscale(1); opacity:.35; }
+  .tro.got { filter:none; opacity:1; }
+  .tro small { font-size:11px; color:var(--muted); }
+  button.upg { font-size:12px; padding:3px 8px; min-height:0; margin-left:2px; white-space:nowrap; background:linear-gradient(var(--brass1),#c98f2c); color:#2a1700; box-shadow:none; }
+  /* daily */
+  #dailyDays { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; margin:6px 0 12px; }
+  .day { background:var(--raise); border-radius:10px; padding:8px 2px; display:flex; flex-direction:column; gap:2px; }
+  .day small { color:var(--muted); font-size:11px; } .day b { color:var(--accent); }
+  .day.got { opacity:.45; } .day.now { outline:3px solid var(--accent); background:#3a2a14; }
+  #chatList { display:grid; gap:8px; }
   /* career */
   .hall { text-align:left; padding:8px 0 4px; border-top:1px solid rgba(232,182,76,.18); }
   .hall .sub { margin:0 0 6px; font-size:13px; }
@@ -65,14 +140,14 @@
   .pz small { font-size:12px; color:var(--muted); font-weight:600; }
   .pz.done small { color:var(--good); }
   /* shop */
-  .item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 4px; border-top:1px solid rgba(232,182,76,.15); text-align:left; }
-  .item .info { display:flex; flex-direction:column; gap:4px; min-width:0; flex:1; }
+  .item { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 10px; padding:10px 4px; border-top:1px solid rgba(232,182,76,.15); text-align:left; }
+  .item .info { display:flex; flex-direction:column; gap:5px; min-width:0; flex:1 1 260px; }
   .item .act { display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
   .item .act small { color:var(--muted); font-size:11px; }
   .item small { color:var(--muted); }
-  .bar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  .bar { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); white-space:nowrap; }
   .bar i { font-style:normal; width:44px; }
-  .bar em { display:block; height:7px; width:160px; border-radius:4px; background:rgba(255,255,255,.1); flex:none; overflow:hidden; }
+  .bar em { display:block; height:7px; flex:1 1 60px; max-width:160px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; }
   .bar u { display:block; height:100%; border-radius:4px; background:linear-gradient(90deg,#c98f2c,var(--brass1)); }
   .swatch { width:120px; height:22px; border-radius:6px; border:1px solid rgba(255,255,255,.25); }
   /* stats */
@@ -124,11 +199,13 @@
 <div id="menu" class="overlay">
   <div class="card col">
     <h1>Clubhouse <span>8-Ball</span></h1>
-    <p class="sub"><span class="coins"></span> · offline · no ads</p>
+    <div id="meCard" role="button" tabindex="0"><canvas id="meFace" width="56" height="56" style="width:56px;height:56px"></canvas>
+      <div class="who"><b id="meName"></b><small id="meRank"></small><div class="xp"><i id="meXp"></i></div></div><span class="coins"></span></div>
     <button id="btnTutorial">Tutorial</button>
-    <button class="primary" id="btnCareer">Career</button>
+    <button class="primary" id="btnCareer">World Tour</button>
     <div class="grid2"><button class="primary" id="btnQuick">Quick Play</button><button id="btnPuzzles">Trick Shots</button></div>
-    <div class="grid3"><button class="small" id="btnShop">Shop</button><button class="small" id="btnStats">Stats</button><button class="small" id="btnSettings">Settings</button></div>
+    <div class="grid2"><button class="small" id="btnLocker">My Player</button><button class="small" id="btnShop">Cue Shop</button></div>
+    <div class="grid2"><button class="small" id="btnStats">Stats &amp; Trophies</button><button class="small" id="btnSettings">Settings</button></div>
     <button class="small" id="btnPractice">Practice table</button>
   </div>
 </div>
@@ -138,21 +215,72 @@
     <div class="top"><h2>Quick Play</h2><button class="small" data-back="menu">Back</button></div>
     <div class="label">Game</div>
     <div class="grid3"><button class="small on" data-game="8ball">8-Ball</button><button class="small" data-game="9ball">9-Ball</button><button class="small" data-game="straight">Straight Pool</button></div>
-    <div class="label">Opponent style</div>
-    <div class="grid2"><button class="small on" data-style="balanced">All-rounder</button><button class="small" data-style="aggressive">Shot-maker</button>
-      <button class="small" data-style="safe">Safety player</button><button class="small" data-style="banker">Bank specialist</button></div>
-    <div class="label">Play the computer</div>
+    <div class="label">Play a random rival</div>
     <div class="grid2"><button class="primary" data-skill="0">Rookie</button><button class="primary" data-skill="1">Regular</button><button class="primary" data-skill="2">Shark</button><button class="primary" data-skill="3">Pro</button></div>
     <div class="label">Or</div>
     <button id="btn2p">2 Players on this phone</button>
   </div>
 </div>
 
-<div id="career" class="overlay">
+<div id="tour" class="overlay">
   <div class="card wide col">
-    <div class="top"><h2>Career</h2><span class="coins"></span><button class="small" data-back="menu">Back</button></div>
-    <p class="sub" style="text-align:left;margin:0">Beat each player to unlock the next. Clear a hall to move up to a bigger room.</p>
-    <div id="careerList"></div>
+    <div class="top"><h2>World Tour</h2><span class="coins"></span><button class="small" data-back="menu">Back</button></div>
+    <p class="sub" style="text-align:left;margin:0">Eight players, three rounds, one trophy. Win an event to unlock the next venue.</p>
+    <button class="gold" id="tourResume" hidden></button>
+    <div id="tourList"></div>
+  </div>
+</div>
+
+<div id="bracket" class="overlay">
+  <div class="card wide col">
+    <div class="top"><h2 id="brTitle"></h2><button class="small" id="btnLeaveBracket">Menu</button></div>
+    <p class="sub" id="brInfo" style="margin:0"></p>
+    <div id="brCols"></div>
+    <div id="brChamp"></div>
+    <button class="gold" id="brPlay"></button>
+  </div>
+</div>
+
+<div id="vs" class="overlay">
+  <div class="col" style="align-items:center;width:100%">
+    <div id="vsStage"></div>
+    <div class="vsWrap">
+      <div class="side left"><canvas id="vsMe" width="220" height="220"></canvas><div class="nm" id="vsMeName"></div><div class="tt" id="vsMeTitle"></div></div>
+      <div class="vsx">VS</div>
+      <div class="side right"><canvas id="vsOpp" width="220" height="220"></canvas><div class="nm" id="vsOppName"></div><div class="tt" id="vsOppTitle"></div></div>
+    </div>
+    <div id="vsQuote"></div>
+    <div class="vsBottom"><div class="tt" id="vsStakes"></div><button class="gold" id="vsGo">Let's play!</button></div>
+  </div>
+</div>
+
+<div id="locker" class="overlay">
+  <div class="card wide col">
+    <div class="top"><h2>My Player</h2><span class="coins"></span><button class="small" data-back="menu">Done</button></div>
+    <div class="lockTop"><canvas id="lockPreview" width="120" height="120"></canvas>
+      <div class="col" style="flex:1;min-width:0;gap:6px">
+        <label class="label" for="lockName" style="margin:0">Player name</label><input id="lockName" maxlength="14" placeholder="You" autocomplete="off">
+        <small class="tt" id="lockRank"></small><div class="xp"><i id="lockXp"></i></div>
+      </div></div>
+    <div id="lockTrophies"></div>
+    <div id="lockTabs"></div>
+    <div id="lockGrid"></div>
+  </div>
+</div>
+
+<div id="daily" class="overlay">
+  <div class="card col">
+    <h2>Daily bonus</h2>
+    <p class="sub" style="margin:0">Come back every day: the bonus grows for seven days in a row.</p>
+    <div id="dailyDays"></div>
+    <button class="gold" id="dailyClaim"></button>
+  </div>
+</div>
+
+<div id="chat" class="overlay">
+  <div class="card col">
+    <div class="top"><h2>Say something</h2><button class="small" data-back="game" id="chatClose">Close</button></div>
+    <div id="chatList"></div>
   </div>
 </div>
 
@@ -192,6 +320,7 @@
     <button data-set="clock"></button>
     <button data-set="bigNums"></button>
     <button data-set="lefty"></button>
+    <button data-set="voices"></button>
   </div>
 </div>
 
@@ -225,7 +354,9 @@
 
 <script src="core.js"></script>
 <script src="audio.js"></script>
+<script src="people.js"></script>
 <script src="render.js"></script>
+<script src="meta.js"></script>
 <script src="game.js"></script>
 <script>
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {

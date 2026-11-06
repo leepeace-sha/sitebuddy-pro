@@ -68,6 +68,20 @@ const Snd = {
       this.tone(240, 160, 0.07, 0.35 * vol, t);
     }
   },
+  // cartoon "voice": a short run of pitched blips, one per syllable-ish chunk of text
+  voices: true,
+  babble(pitch, text) {
+    if (!this.on || !this.voices || !this.ac || text.replace(/[.\s]/g, '') === '') return;
+    const ac = this.ac, t0 = ac.currentTime + 0.02, n = Math.min(9, Math.max(2, Math.ceil(text.length / 5)));
+    for (let i = 0; i < n; i++) {
+      const t = t0 + i * 0.085, o = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
+      o.type = 'triangle'; o.frequency.setValueAtTime(pitch * (0.85 + Math.random() * 0.4), t);
+      o.frequency.linearRampToValueAtTime(pitch * (0.8 + Math.random() * 0.4), t + 0.06);
+      f.type = 'lowpass'; f.frequency.value = 2200;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      o.connect(f); f.connect(g); g.connect(this.out); o.start(t); o.stop(t + 0.09);
+    }
+  },
   tick() { if (this.on && this.ac) this.tone(1800, 1800, 0.06, 0.25, this.ac.currentTime, 'square'); },
 };
 

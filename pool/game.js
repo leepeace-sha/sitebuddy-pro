@@ -7,17 +7,23 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('c8b_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('c8b_' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
 };
-const SET = Object.assign({ sound: store.get('sound', true), haptics: true, guide: store.get('guide', true), clock: 0, bigNums: false, lefty: false }, store.get('settings', {}));
+const SET = Object.assign({ sound: store.get('sound', true), haptics: true, guide: store.get('guide', true), clock: 0, bigNums: false, lefty: false, voices: true }, store.get('settings', {}));
 let longGuide = SET.guide;
 const saveSet = () => store.set('settings', SET);
 
 const STATS0 = { played: 0, won: 0, lost: 0, streak: 0, bestStreak: 0, potted: 0, shots: 0, fouls: 0, bestRun: 0, banks: 0, bestMulti: 0, eightBreaks: 0, golden: 0, coinsEarned: 0, games2p: 0 };
-const PROFILE0 = () => ({ coins: 150, owned: { cue: [0], cloth: [0, 1], room: [0] }, equip: { cue: 0, cloth: 0, room: 0 }, career: [], puzzles: [], ach: {}, tutorial: false, stats: Object.assign({}, STATS0) });
+const PROFILE0 = () => ({ coins: 150, owned: { cue: [0], cloth: [0, 1], room: [0] }, equip: { cue: 0, cloth: 0, room: 0 }, career: [], puzzles: [], ach: {}, tutorial: false, stats: Object.assign({}, STATS0),
+  name: '', look: L_({ skin: SKINS[1], hair: 'short', hairColor: HAIR_COLORS[1], top: 'tee', topColor: TOP_COLORS[0], bg: BG_COLORS[0], seed: 0 }),
+  xp: 0, level: 1, cueLv: {}, trophies: [0, 0, 0, 0], tour: null, daily: { last: '', streak: 0 }, lockOwned: [] });
 let prof = Object.assign(PROFILE0(), store.get('profile', {}));
 prof.stats = Object.assign({}, STATS0, prof.stats);
+prof.look = Object.assign(PROFILE0().look, prof.look);
+// earlier versions had a career ladder; finished halls become World Tour trophies
+if (prof.ach.hall1 && !prof.trophies[0]) prof.trophies[0] = 1;
+if (prof.ach.hall2 && !prof.trophies[1]) prof.trophies[1] = 1;
 const saveProf = () => store.set('profile', prof);
 function applyEquip() { cueIdx = prof.equip.cue; clothIdx = prof.equip.cloth; roomIdx = prof.equip.room; }
-applyEquip(); bigNums = SET.bigNums; lefty = SET.lefty; applyHand(); Snd.on = SET.sound;
+applyEquip(); bigNums = SET.bigNums; lefty = SET.lefty; applyHand(); Snd.on = SET.sound; Snd.voices = SET.voices;
 
 // ───────────────────────────── achievements & coins ─────────────────────────────
 const ACH = [
@@ -40,9 +46,10 @@ const ACH = [
   { id: 'century', name: 'Century', desc: 'Pot 100 balls', coins: 100 },
   { id: 'nine_win', name: 'Nine Lives', desc: 'Win a game of 9-ball', coins: 75 },
   { id: 'straight_win', name: 'Straight Shooter', desc: 'Win a game of straight pool', coins: 100 },
-  { id: 'hall1', name: 'Local Legend', desc: 'Beat everyone at The Corner Pocket', coins: 200 },
-  { id: 'hall2', name: 'Club Champion', desc: 'Beat everyone at Kingsley Club', coins: 400 },
-  { id: 'hall3', name: 'Grand Champion', desc: 'Win the Grand Championship', coins: 1000 },
+  { id: 'hall1', name: 'Local Legend', desc: 'Win the Corner Pocket Cup', coins: 200 },
+  { id: 'hall2', name: 'Club Champion', desc: 'Win the Kingsley Club Open', coins: 400 },
+  { id: 'hall_neon', name: 'Night Owl', desc: 'Win Neon Nights 9-Ball', coins: 600 },
+  { id: 'hall3', name: 'World Champion', desc: 'Win the Grand Championship', coins: 1000 },
   { id: 'puzzle5', name: 'Trick Shot Artist', desc: 'Solve 5 trick shots', coins: 150 },
   { id: 'puzzle_all', name: 'Trick Shot Master', desc: 'Solve every trick shot', coins: 400 },
   { id: 'shop', name: 'Treat Yourself', desc: 'Buy something in the shop', coins: 25 },
@@ -52,29 +59,9 @@ function unlock(id) {
   if (prof.ach[id] || (G && G.demo)) return;
   const a = ACH.find(x => x.id === id); if (!a) return;
   prof.ach[id] = Date.now(); addCoins(a.coins);
-  notify(`🏆 ${a.name} · +${a.coins} coins`);
+  notify(`🏆 ${a.name} · +${a.coins} credits`);
   if (G) G.newAch.push(a);
 }
-
-// ───────────────────────────── career ─────────────────────────────
-const CAREER = [
-  { name: 'The Corner Pocket', room: 0, blurb: 'A friendly neighbourhood bar. Single frames.', raceTo: 1, opp: [
-    { name: 'Rusty', avatar: 'R', color: '#b5651d', skill: 0, style: 'aggressive', game: '8ball', prize: 60, bio: 'Hits everything hard and hopes for the best.' },
-    { name: 'Dee', avatar: 'D', color: '#2f855a', skill: 1, style: 'safe', game: '8ball', prize: 90, bio: 'Never leaves you an easy shot.' },
-    { name: 'Big Lou', avatar: 'L', color: '#6b46c1', skill: 1, style: 'banker', game: '8ball', prize: 130, bio: 'Owns the bar. Loves a bank shot.' } ] },
-  { name: 'Kingsley Club', room: 1, blurb: 'Members only. Race to 2 frames.', raceTo: 2, opp: [
-    { name: 'Marguerite', avatar: 'M', color: '#b83280', skill: 2, style: 'safe', game: '9ball', prize: 200, bio: 'Plays 9-ball like chess.' },
-    { name: 'Hector', avatar: 'H', color: '#c05621', skill: 2, style: 'aggressive', game: '8ball', prize: 260, bio: 'Fast, loud and dangerous.' },
-    { name: 'The Professor', avatar: 'P', color: '#2c5282', skill: 3, style: 'banker', game: '8ball', prize: 340, bio: 'Sees angles nobody else does.' } ] },
-  { name: 'Grand Championship', room: 2, blurb: 'The big stage. Race to 3 frames.', raceTo: 3, opp: [
-    { name: 'Viper', avatar: 'V', color: '#2f855a', skill: 3, style: 'aggressive', game: '9ball', prize: 450, bio: 'Strikes first, strikes hard.' },
-    { name: 'Ice', avatar: 'I', color: '#3182ce', skill: 3, style: 'safe', game: '8ball', prize: 550, bio: 'Never shows emotion. Never misses.' },
-    { name: 'The Champion', avatar: '♛', color: '#b7791f', skill: 4, style: 'balanced', game: '8ball', prize: 1000, bio: 'Undefeated for six seasons.' } ] },
-];
-const oppId = (h, i) => `${h}-${i}`;
-const beaten = (h, i) => prof.career.includes(oppId(h, i));
-const hallOpen = h => h === 0 || CAREER[h - 1].opp.every((_, i) => beaten(h - 1, i));
-const oppOpen = (h, i) => hallOpen(h) && (i === 0 || beaten(h, i - 1));
 
 // ───────────────────────────── trick shots ─────────────────────────────
 // Each puzzle: cue position, balls [number, x, y], balls that must be potted, shots allowed.
@@ -98,15 +85,17 @@ let G = null, lastRoom = -2;
 const human = () => G && !G.players[G.turn].cpu;
 const onEight = (t = G.turn) => G.game === '8ball' && !!G.groups[t] && remaining(G.balls, G.groups[t]) === 0;
 const needCall = () => G.game === '8ball' && !G.isBreak && onEight();
-const turnMsg = i => (G.players[i].name === 'You' ? 'Your turn' : `${G.players[i].name}'s turn`);
-const handMsg = i => (G.players[i].name === 'You' ? 'You have ball in hand' : `${G.players[i].name} has ball in hand`);
+const turnMsg = i => (G.players[i].me ? 'Your turn' : `${G.players[i].name}'s turn`);
+const handMsg = i => (G.players[i].me ? 'You have ball in hand' : `${G.players[i].name} has ball in hand`);
 const tracked = () => G && !G.demo && G.vs !== '2p' && !G.players[G.turn].cpu;
 function toast(text, dur = 2.4) { if (G && !G.demo) G.msg = { text, t: 0, dur }; }
 
 function newGame(o) {
   const solo = o.vs === 'solo';
-  const players = o.vs === 'cpu' ? [{ name: 'You', cpu: false }, { name: (o.opp && o.opp.name) || 'Computer', cpu: true, avatar: o.opp && o.opp.avatar, color: o.opp && o.opp.color }]
-    : o.vs === '2p' ? [{ name: 'Player 1', cpu: false }, { name: 'Player 2', cpu: false }]
+  const me = { name: prof.name || 'You', me: true, cpu: false, look: prof.look, level: prof.level };
+  const ch = o.char || BOT;
+  const players = o.vs === 'cpu' ? [me, { name: ch.name, cpu: true, char: ch, look: ch.look, level: ch.id === 'bot' ? 0 : 3 + Math.round((ch.skill || 0) * 6) }]
+    : o.vs === '2p' ? [Object.assign({}, me, { name: prof.name || 'Player 1', me: false }), { name: 'Player 2', cpu: false, look: P2_LOOK }]
       : [{ name: o.game === 'puzzle' ? o.puzzle.title : o.game === 'tutorial' ? 'Tutorial' : 'Practice', cpu: false }, { name: '', cpu: false }];
   G = {
     game: o.game, vs: o.vs, solo, persona: o.persona || { skill: 2, style: 'balanced' }, players, opts: o,
@@ -114,7 +103,7 @@ function newGame(o) {
     phase: 'aim', aim: 0, power: 0, spin: { x: 0, y: 0 }, called: -1, sinking: [], fx: [], strike: null, msg: null,
     ai: null, aiGen: null, ev: null, S: null, fine: 0, over: false, shots: 0, shotsBy: [0, 0], score: [0, 0], target: o.target || 25,
     match: o.match || null, clock: !solo && !o.demo ? SET.clock : 0, clockLeft: 0, lastTick: 99, run: 0, fouls: [0, 0], oppOnEight: false,
-    newAch: [], earned: 0, demo: !!o.demo, puzzle: o.puzzle || null, tut: null, hint: null, replayOffer: 0, lastShot: null, rp: null,
+    newAch: [], earned: 0, xpGained: 0, talk: [], expr: ['neutral', 'neutral'], exprT: [0, 0], onEightSaid: false, demo: !!o.demo, puzzle: o.puzzle || null, tut: null, hint: null, replayOffer: 0, lastShot: null, rp: null,
   };
   if (o.game === 'puzzle') setupPuzzle();
   else if (o.game === 'tutorial') setupTutorial(0);
@@ -126,7 +115,8 @@ function newGame(o) {
   setTip(o.game === 'puzzle' ? G.puzzle.text : G.tut ? G.tut.tip : null);
   if (!G.demo && o.game !== 'puzzle' && o.game !== 'tutorial') {
     const mt = G.match ? `Frame ${G.match.score[0] + G.match.score[1] + 1} · ` : '';
-    toast(o.game === 'practice' ? 'Practice — break when ready' : `${mt}${G.players[G.turn].name === 'You' ? 'Your break' : G.players[G.turn].name + ' to break'}`);
+    toast(o.game === 'practice' ? 'Practice — break when ready' : `${mt}${G.turn === 0 && G.players[0].me ? 'Your break' : G.players[G.turn].name + ' to break'}`);
+    const g0 = G; setTimeout(() => { if (G === g0 && !G.over && !G.shots) react('greet', 1, true); }, 1400);
   }
   startTurn();
 }
@@ -138,7 +128,9 @@ function startTurn() {
     G.phase = 'cpu'; G.ai = null;
     const g0 = G;
     setTimeout(() => { if (G === g0 && G.phase === 'cpu' && !G.over) G.aiGen = aiPlanGen(G, G.persona); }, 450);
-  } else if (needCall()) toast('On the 8-ball — tap a pocket to call it', 3);
+  } else {
+    if (needCall()) { toast('On the 8-ball — tap a pocket to call it', 3); if (!G.onEightSaid) { G.onEightSaid = true; react('pressure', 0.8); } }
+  }
 }
 
 const snapBalls = B => B.map(b => ({ n: b.n, x: b.x, y: b.y, vx: 0, vy: 0, on: b.on, p: b.p.slice(), q: b.q.slice() }));
@@ -156,7 +148,7 @@ function chalkPuff(cue, aim) {
 function shoot(power) {
   const cue = G.balls[0];
   if (needCall() && G.called < 0) { toast('Tap a pocket to call the 8-ball first'); return false; }
-  const cpu = G.players[G.turn].cpu, K = cpu ? CUES[0] : CUES[cueIdx];
+  const cpu = G.players[G.turn].cpu, K = cpu ? CUES[0] : cueStat(cueIdx);
   const lim = v => Math.max(-1.25, Math.min(1.25, v));
   const spin = cpu ? G.spin : { x: lim(G.spin.x * K.spin), y: lim(G.spin.y * K.spin) }, mul = cpu ? 1 : K.power;
   G.lastShot = { balls: snapBalls(G.balls), aim: G.aim, power, spin, mul };
@@ -217,6 +209,17 @@ function endShot() {
   if (res.foul) { G.fouls[me]++; if (trk) prof.stats.fouls++; }
   if (G.game === '8ball' && G.isBreak && objPots.some(p => p.n === 8) && trk) { prof.stats.eightBreaks++; unlock('eight_break'); }
   if (res.win || res.lose) return finishGame(res.win ? me : other, res.reason, res);
+  // the rival reacts, and faces change
+  if (G.vs === 'cpu' && !G.isBreak) {
+    const cpuShot = G.players[me].cpu, great = objPots.length >= 2 || banks > 0;
+    if (cpuShot) {
+      if (res.foul) react('myFoul', 0.8); else if (res.keep) react('myGood', great ? 0.9 : 0.35); else react('myMiss', 0.45);
+    } else {
+      if (res.foul) react('youFoul', 0.75); else if (res.keep) react('youGood', great ? 0.9 : G.run >= 2 ? 0.4 : 0.15); else react('youMiss', 0.4);
+    }
+    G.expr[me] = res.foul ? 'sad' : res.keep ? 'grin' : 'neutral'; G.exprT[me] = 2.2;
+  }
+  if (tracked() && res.keep && !res.foul) addXP(5 * objPots.length);
   if (res.keep && !res.foul) {
     G.run += objPots.filter(p => rules.counts(p.n, G.stBefore, res, me)).length;
     if (trk) { prof.stats.bestRun = Math.max(prof.stats.bestRun, G.run); if (G.run >= 5) unlock('run5'); if (G.run >= 8) unlock('run8'); }
@@ -227,7 +230,7 @@ function endShot() {
     if (scratched) respotCue();
     if (res.assign) {
       G.groups[me] = res.assign; G.groups[other] = other8(res.assign);
-      toast(`${G.players[me].name === 'You' ? 'You are' : G.players[me].name + ' is'} ${res.assign === 'solids' ? 'solids (1–7)' : 'stripes (9–15)'}`);
+      toast(`${G.players[me].me ? 'You are' : G.players[me].name + ' is'} ${res.assign === 'solids' ? 'solids (1–7)' : 'stripes (9–15)'}`);
     }
     if (G.vs === 'cpu' && onEight(1)) G.oppOnEight = true;
   } else if (G.game === '9ball') {
@@ -265,6 +268,8 @@ function finishGame(winner, reason, res = {}) {
   if (G.demo) { setTimeout(() => { if (G && G.demo) startDemo(); }, 2500); return; }
   const youWon = winner === 0 && G.vs === 'cpu', S = prof.stats;
   buzz(youWon ? [40, 60, 40] : 30);
+  if (G.vs === 'cpu') { react(youWon ? 'lose' : 'win', 1, true); G.expr = youWon ? ['grin', 'sad'] : ['sad', 'grin']; G.exprT = [9, 9]; addXP(youWon ? 40 + 20 * G.persona.skill : 15); }
+  if (youWon || G.vs === '2p') confetti(youWon ? 90 : 60);
   if (G.vs === 'cpu') {
     S.played++;
     if (youWon) {
@@ -276,7 +281,7 @@ function finishGame(winner, reason, res = {}) {
       if (G.game === '9ball') unlock('nine_win');
       if (G.game === 'straight') unlock('straight_win');
       if (res.golden) { S.golden++; unlock('golden'); }
-      if (!G.match) addCoins(20 + 15 * G.persona.skill);
+      if (!G.match) addCoins(25 + 20 * G.persona.skill);
     } else { S.lost++; S.streak = 0; if (!G.match) addCoins(5); }
   } else if (G.vs === '2p') S.games2p++;
   saveProf();
@@ -285,34 +290,15 @@ function finishGame(winner, reason, res = {}) {
     const m = G.match; m.score[winner]++;
     if (m.score[winner] < m.raceTo) {
       setTimeout(() => showResult({
-        title: `${winner === 0 ? 'You win' : name + ' wins'} the frame`, reason: `${reason}. Match ${m.score[0]}–${m.score[1]}, first to ${m.raceTo}.`,
+        title: `${G.players[winner].me ? 'You win' : name + ' wins'} the frame`, reason: `${reason}. Match ${m.score[0]}–${m.score[1]}, first to ${m.raceTo}.`,
         primary: ['Next frame', () => { newGame(Object.assign({}, G.opts, { match: m, breaker: 1 - G.breaker })); hideAll(); }], quit: true,
       }), 900);
       return;
     }
-    if (m.career) { setTimeout(() => careerResult(winner === 0, reason), 900); return; }
+    if (m.tour) { setTimeout(() => tourMatchDone(winner === 0), 1600); return; }
   }
   const title = G.vs === 'cpu' ? (youWon ? 'You win! 🏆' : `${name} wins`) : `${name} wins! 🏆`;
-  setTimeout(() => showResult({ title, reason, primary: ['Play again', () => { newGame(Object.assign({}, G.opts, { breaker: 1 - G.breaker })); hideAll(); }] }), 900);
-}
-
-function careerResult(won, reason) {
-  const { h, i } = G.match.career, o = CAREER[h].opp[i];
-  let extra = '';
-  if (won) {
-    if (!beaten(h, i)) { prof.career.push(oppId(h, i)); addCoins(o.prize); extra = ` Prize money: ${o.prize} coins.`; }
-    else { const p = Math.round(o.prize / 4); addCoins(p); extra = ` Rematch bonus: ${p} coins.`; }
-    if (CAREER[h].opp.every((_, k) => beaten(h, k))) {
-      unlock(['hall1', 'hall2', 'hall3'][h]);
-      if (h + 1 < CAREER.length && !prof.owned.room.includes(CAREER[h + 1].room)) { prof.owned.room.push(CAREER[h + 1].room); extra += ` ${ROOMS[CAREER[h + 1].room].name} is now open.`; }
-      if (h === 2 && !prof.owned.cue.includes(5)) { prof.owned.cue.push(5); extra += " You won the Champion's Cue!"; }
-    }
-    saveProf();
-  }
-  showResult({
-    title: won ? `You beat ${o.name}! 🏆` : `${o.name} wins the match`, reason: `${reason}.${extra}`,
-    primary: won ? ['Continue career', openCareer] : ['Try again', () => playCareer(h, i)],
-  });
+  setTimeout(() => showResult({ title, reason, primary: ['Play again', () => { newGame(Object.assign({}, G.opts, { breaker: 1 - G.breaker })); hideAll(); }] }), 1600);
 }
 
 // ───────────────────────────── trick shots ─────────────────────────────
@@ -342,7 +328,7 @@ function puzzleSolved() {
   G.over = true; G.phase = 'over'; setTip(null);
   let reason = 'Nicely done.';
   if (!prof.puzzles.includes(k)) {
-    prof.puzzles.push(k); addCoins(P.coins); reason = `Nicely done. +${P.coins} coins.`;
+    prof.puzzles.push(k); addCoins(P.coins); reason = `Nicely done. +${P.coins} credits.`; addXP(60);
     if (prof.puzzles.length >= 5) unlock('puzzle5');
     if (prof.puzzles.length >= PUZZLES.length) unlock('puzzle_all');
     saveProf();
@@ -391,7 +377,7 @@ function endTutorial() {
   }
   if (k + 1 < TUT.length) { toast('Nice!', 1.2); setupTutorial(k + 1); return startTurn(); }
   G.over = true; G.phase = 'over'; setTip(null);
-  prof.tutorial = true; saveProf(); unlock('tutorial'); syncMenu();
+  prof.tutorial = true; saveProf(); unlock('tutorial'); addXP(100); syncMenu();
   setTimeout(() => showResult({
     title: "You're ready to play!", reason: '8-ball in a nutshell: pot all of your group (solids or stripes), then call a pocket and pot the 8-ball. Fouls give your opponent ball in hand.',
     primary: ['Play the computer', () => { $('quick').dataset.game = '8ball'; startQuick('cpu', 1); }],
@@ -438,7 +424,13 @@ function update(dt) {
   if (!G) return;
   if (G.msg) { G.msg.t += dt; if (G.msg.t > G.msg.dur) G.msg = null; }
   G.sinking = G.sinking.filter(s => (s.t += dt) < 0.25);
-  G.fx = G.fx.filter(f => { f.t += dt; f.x += (f.vx || 0) * dt; f.y += (f.vy || 0) * dt; if (f.vx) { f.vx *= 0.9; f.vy *= 0.9; } return f.t < f.life; });
+  G.fx = G.fx.filter(f => {
+    f.t += dt; f.x += (f.vx || 0) * dt; f.y += (f.vy || 0) * dt;
+    if (f.conf) { f.vx += f.gx * dt; f.vy += f.gy * dt; f.vx *= 0.99; f.vy *= 0.99; } else if (f.vx) { f.vx *= 0.9; f.vy *= 0.9; }
+    return f.t < f.life;
+  });
+  G.talk = G.talk.filter(b => (b.t += dt) < b.dur);
+  G.exprT[0] -= dt; G.exprT[1] -= dt;
   if (G.strike && (G.strike.t += dt * (G.phase === 'replay' ? 0.45 : 1)) > 0.3) G.strike = null;
   if (G.replayOffer > 0 && G.phase === 'aim') G.replayOffer = Math.max(0, G.replayOffer - dt);
   if (G.phase === 'moving' || G.phase === 'replay') {
@@ -503,6 +495,7 @@ cv.addEventListener('pointerdown', e => {
   const d = toDesign(e);
   if (inC(d, LAY.menu)) return openPause();
   if (inC(d, LAY.spin)) { if (G.phase === 'aim' && human()) openSpin(); return; }
+  if (G.vs === 'cpu' && !G.over && inC(d, LAY.chat)) return openChat();
   if (G.replayOffer && G.phase === 'aim' && inRect(d, LAY.replayBtn)) return startReplay();
   if (G.phase !== 'aim' || !human()) return;
   cv.setPointerCapture(e.pointerId);
@@ -563,9 +556,10 @@ function openSpin() { show('spinPanel'); updateSpinBtn(); }
 function showResult({ title, reason, primary, back, quit }) {
   $('overTitle').textContent = title; $('overReason').textContent = reason || '';
   const rw = [];
-  if (G && G.earned) rw.push(`<li>● +${G.earned} coins</li>`);
+  if (G && G.earned) rw.push(`<li>● +${G.earned} credits</li>`);
+  if (G && G.xpGained) rw.push(`<li>★ +${G.xpGained} XP · Level ${prof.level}</li>`);
   if (G) for (const a of G.newAch) rw.push(`<li>🏆 ${esc(a.name)}</li>`);
-  if (G) { G.newAch = []; G.earned = 0; }
+  if (G) { G.newAch = []; G.earned = 0; G.xpGained = 0; }
   $('overRewards').innerHTML = rw.join(''); $('overRewards').hidden = !rw.length;
   const btns = $('overBtns'); btns.innerHTML = '';
   const add = (label, fn, cls) => { const b = document.createElement('button'); b.textContent = label; if (cls) b.className = cls; b.onclick = fn; btns.appendChild(b); };
@@ -577,46 +571,30 @@ function showResult({ title, reason, primary, back, quit }) {
 }
 
 function startQuick(vs, skill) {
-  const game = $('quick').dataset.game || '8ball', style = $('quick').dataset.style || 'balanced';
+  const game = $('quick').dataset.game || '8ball';
   Snd.init(); fullscreen();
-  const opp = vs === 'cpu' ? { name: ['Rookie', 'Regular', 'Shark', 'Pro'][skill], avatar: '🤖' } : null;
-  newGame({ game, vs, persona: { skill, style }, opp });
-  hideAll();
-}
-function playCareer(h, i) {
-  const C = CAREER[h], o = C.opp[i];
-  Snd.init(); fullscreen();
-  newGame({ game: o.game, vs: 'cpu', persona: { skill: o.skill, style: o.style }, opp: o, room: C.room, match: { raceTo: C.raceTo, score: [0, 0], career: { h, i } } });
-  hideAll();
+  if (vs !== 'cpu') { newGame({ game, vs }); hideAll(); return; }
+  const pool = CAST.filter(c => c.skill === skill && c.id !== 'queen'), ch = pick(pool);
+  const gname = { '8ball': '8-Ball', '9ball': '9-Ball', straight: 'Straight Pool' }[game];
+  showVS({ opp: { name: ch.name, look: ch.look, title: ch.title, char: ch }, stage: `Quick Play · ${gname}`, stakes: `Win ${25 + 20 * skill} credits`,
+    go: () => newGame({ game, vs, persona: { skill, style: ch.style }, char: ch }) });
 }
 function playPuzzle(k) { Snd.init(); newGame({ game: 'puzzle', vs: 'solo', puzzle: PUZZLES[k] }); hideAll(); setTip(PUZZLES[k].text); }
 function startTutorial() { Snd.init(); fullscreen(); newGame({ game: 'tutorial', vs: 'solo' }); hideAll(); setTip(G.tut.tip); }
 function startPractice() { Snd.init(); fullscreen(); newGame({ game: 'practice', vs: 'solo' }); hideAll(); }
 function startDemo() { newGame({ game: '8ball', vs: 'cpu', demo: true, persona: { skill: 2, style: 'balanced' } }); G.players.forEach(p => { p.cpu = true; }); G.msg = null; startTurn(); }
-function goMenu() { syncMenu(); show('menu'); startDemo(); setTip(null); }
+function goMenu() { syncMenu(); show('menu'); if (!G || !G.demo) startDemo(); setTip(null); if (!dailyShown) { dailyShown = true; dailyCheck(); } }
+let dailyShown = false;
 function fullscreen() { try { const de = document.documentElement; if (de.requestFullscreen && !document.fullscreenElement) de.requestFullscreen({ navigationUI: 'hide' }).catch(() => {}); } catch (e) { /* not available */ } }
 
 function syncMenu() {
   syncCoins();
+  $('meName').textContent = prof.name || 'You'; $('meRank').textContent = `Level ${prof.level} · ${rankOf(prof.level)}`;
+  $('meXp').style.width = Math.round(100 * prof.xp / xpNeed(prof.level)) + '%';
+  drawPortraitCanvas($('meFace'), prof.look, 'happy');
+  const T = prof.tour; $('btnCareer').textContent = T && !T.out && T.round < 3 ? `World Tour · ${ROUND_NAMES[T.round]}` : 'World Tour';
   $('btnTutorial').classList.toggle('gold', !prof.tutorial);
   $('btnTutorial').textContent = prof.tutorial ? 'Tutorial' : 'New here? Learn to play';
-}
-function openCareer() {
-  const list = $('careerList'); list.innerHTML = '';
-  CAREER.forEach((C, h) => {
-    const open = hallOpen(h), sec = document.createElement('section'); sec.className = 'hall' + (open ? '' : ' locked');
-    sec.innerHTML = `<h3>${esc(C.name)}${open ? '' : ' 🔒'}</h3><p class="sub">${esc(C.blurb)}</p>`;
-    C.opp.forEach((o, i) => {
-      const done = beaten(h, i), can = oppOpen(h, i), row = document.createElement('button');
-      row.className = 'opp' + (done ? ' done' : ''); row.disabled = !can;
-      const gameName = { '8ball': '8-Ball', '9ball': '9-Ball' }[o.game];
-      row.innerHTML = `<span class="av" style="background:${o.color}">${esc(o.avatar)}</span><span class="who"><b>${esc(o.name)}</b><small>${esc(o.bio)}</small><small class="tags">${gameName} · ${o.style} · ● ${o.prize}</small></span><span class="st">${done ? '✓' : can ? 'Play' : '🔒'}</span>`;
-      row.onclick = () => playCareer(h, i);
-      sec.appendChild(row);
-    });
-    list.appendChild(sec);
-  });
-  syncCoins(); show('career');
 }
 function openPuzzles() {
   const list = $('puzzleList'); list.innerHTML = '';
@@ -638,8 +616,11 @@ function openShop(tab = shopTab) {
   cat.forEach((it, k) => {
     const owned = prof.owned[tab].includes(k), eq = prof.equip[tab] === k, row = document.createElement('div'); row.className = 'item';
     let detail = '';
-    if (tab === 'cue') detail = [['Aim', it.aim, 0.9, 1.45], ['Spin', it.spin, 0.8, 1.3], ['Power', it.power, 0.95, 1.15]]
-      .map(([l, v, lo, hi]) => `<span class="bar"><i>${l}</i><em><u style="width:${Math.round(15 + 85 * (v - lo) / (hi - lo))}%"></u></em></span>`).join('');
+    if (tab === 'cue') {
+      const st = cueStat(k), u = cueLv(k);
+      detail = [['Aim', st.aim, 0.9, 1.75], ['Spin', st.spin, 0.8, 1.6], ['Power', st.power, 0.95, 1.25]]
+        .map(([l, v, lo, hi], si) => `<span class="bar"><i>${l}</i><em><u style="width:${Math.round(10 + 90 * (v - lo) / (hi - lo))}%"></u></em>${'★'.repeat(u[si])}${'☆'.repeat(3 - u[si])}${owned && u[si] < 3 ? ` <button class="upg${prof.coins < upgCost(k, si) ? '" disabled' : '"'} data-upg="${k}:${si}">+ ● ${upgCost(k, si)}</button>` : ''}</span>`).join('');
+    }
     else if (tab === 'cloth') detail = `<span class="swatch" style="background:${it.felt[1]}"></span>`;
     else detail = `<small>${esc(ROOM_BLURB[k])}</small>`;
     let action;
@@ -650,6 +631,12 @@ function openShop(tab = shopTab) {
     row.innerHTML = `<div class="info"><b>${esc(it.name)}</b>${detail}</div><div class="act">${action}</div>`;
     list.appendChild(row);
   });
+  list.querySelectorAll('[data-upg]').forEach(b => { b.onclick = () => {
+    const [k, si] = b.dataset.upg.split(':').map(Number), cost = upgCost(k, si);
+    if (prof.coins < cost) return;
+    prof.coins -= cost; const u = cueLv(k).slice(); u[si]++; prof.cueLv[k] = u; saveProf();
+    notify(`${CUES[k].name}: ${UPG[si][0]} upgraded to ★${u[si]}`); unlock('shop'); openShop('cue');
+  }; });
   list.querySelectorAll('[data-eq]').forEach(b => { b.onclick = () => { prof.equip[tab] = +b.dataset.eq; saveProf(); applyEquip(); refreshLook(); openShop(tab); }; });
   list.querySelectorAll('[data-buy]').forEach(b => { b.onclick = () => {
     const k = +b.dataset.buy, it = cat[k];
@@ -657,7 +644,7 @@ function openShop(tab = shopTab) {
     prof.coins -= it.price; prof.owned[tab].push(k); prof.equip[tab] = k; saveProf(); applyEquip(); refreshLook();
     notify(`Bought ${it.name}`); unlock('shop'); openShop(tab);
   }; });
-  $('shopNote').textContent = tab === 'room' ? 'Rooms change the menu and quick play. Career matches are played in each hall\'s own room.' : tab === 'cue' ? 'Better cues give a longer aim guide, more spin or more power.' : '';
+  $('shopNote').textContent = tab === 'room' ? 'Rooms change the menu and quick play. World Tour events are played in their own venue.' : tab === 'cue' ? 'Better cues give a longer aim guide, more spin or more power. Upgrade cues you own up to ★3 in each stat.' : '';
   syncCoins(); show('shop');
 }
 function refreshLook() { lastRoom = roomOverride >= 0 ? roomOverride : roomIdx; drawStatic(); }
@@ -666,7 +653,7 @@ function openStats() {
   const rows = [['Games vs computer', S.played], ['Wins', S.won], ['Win rate', S.played ? rate + '%' : '—'], ['Best win streak', S.bestStreak],
     ['Balls potted', S.potted], ['Pot rate', S.shots ? Math.round(100 * S.potted / S.shots) + '%' : '—'], ['Longest run', S.bestRun],
     ['Most balls in one shot', S.bestMulti], ['Bank shots', S.banks], ['Fouls', S.fouls], ['8 on the break', S.eightBreaks], ['Golden breaks', S.golden],
-    ['Trick shots solved', `${prof.puzzles.length}/${PUZZLES.length}`], ['Career wins', `${prof.career.length}/9`], ['2-player games', S.games2p], ['Coins earned', S.coinsEarned]];
+    ['Trick shots solved', `${prof.puzzles.length}/${PUZZLES.length}`], ['Tour titles', prof.trophies.reduce((a, b) => a + b, 0)], ['Level', `${prof.level} · ${rankOf(prof.level)}`], ['Credits earned', S.coinsEarned]];
   $('statGrid').innerHTML = rows.map(([k, v]) => `<div><small>${k}</small><b>${v}</b></div>`).join('');
   const got = ACH.filter(a => prof.ach[a.id]).length;
   $('achCount').textContent = `${got} of ${ACH.length} unlocked`;
@@ -678,13 +665,13 @@ function openSettings(from) { settingsBack = from; syncToggles(); show('settings
 function syncToggles() {
   const lab = { sound: ['Sound', SET.sound ? 'On' : 'Off'], haptics: ['Vibration', SET.haptics ? 'On' : 'Off'],
     guide: ['Aim guide', SET.guide ? 'Long' : 'Short'], clock: ['Shot clock', SET.clock ? SET.clock + ' s' : 'Off'], bigNums: ['Large ball numbers', SET.bigNums ? 'On' : 'Off'],
-    lefty: ['Controls', SET.lefty ? 'Left-handed' : 'Right-handed'] };
+    lefty: ['Controls', SET.lefty ? 'Left-handed' : 'Right-handed'], voices: ['Character voices', SET.voices ? 'On' : 'Off'] };
   document.querySelectorAll('[data-set]').forEach(b => { const [k, v] = lab[b.dataset.set]; b.innerHTML = `<span>${k}</span><b>${v}</b>`; });
 }
 document.querySelectorAll('[data-set]').forEach(b => { b.onclick = () => {
   const k = b.dataset.set;
   if (k === 'clock') SET.clock = SET.clock === 0 ? 30 : SET.clock === 30 ? 15 : 0; else SET[k] = !SET[k];
-  saveSet(); Snd.on = SET.sound; longGuide = SET.guide; bigNums = SET.bigNums;
+  saveSet(); Snd.on = SET.sound; Snd.voices = SET.voices; longGuide = SET.guide; bigNums = SET.bigNums;
   if (k === 'lefty') { lefty = SET.lefty; applyHand(); resize(); }
   if (k === 'sound') Snd.init();
   if (k === 'clock' && G && !G.demo && !G.solo) { G.clock = SET.clock; G.clockLeft = SET.clock; }
@@ -708,7 +695,11 @@ $('spinPanel').addEventListener('pointerdown', e => { if (e.target.id === 'spinP
 
 // wiring
 $('tip').onclick = () => { $('tip').hidden = true; $('tip').textContent = ''; };
-$('btnCareer').onclick = openCareer;
+$('btnCareer').onclick = () => (prof.tour && !prof.tour.out && prof.tour.round < 3 ? openBracket() : openTour());
+$('tourResume').onclick = openBracket;
+$('btnLocker').onclick = openLocker; $('meCard').onclick = openLocker;
+$('lockName').addEventListener('input', () => { prof.name = $('lockName').value.trim().slice(0, 14); saveProf(); });
+$('btnLeaveBracket').onclick = goMenu;
 $('btnQuick').onclick = () => show('quick');
 $('btnPuzzles').onclick = openPuzzles;
 $('btnPractice').onclick = startPractice;
@@ -716,16 +707,16 @@ $('btnTutorial').onclick = startTutorial;
 $('btnShop').onclick = () => openShop();
 $('btnStats').onclick = openStats;
 $('btnSettings').onclick = () => openSettings('menu');
-document.querySelectorAll('[data-back]').forEach(b => { b.onclick = () => (b.dataset.back === 'settings' && settingsBack === 'pause' ? show('pause') : goMenu()); });
+document.querySelectorAll('[data-back]').forEach(b => { b.onclick = () => (b.dataset.back === 'game' ? hideAll() : b.dataset.back === 'settings' && settingsBack === 'pause' ? show('pause') : goMenu()); });
+$('chat').addEventListener('pointerdown', e => { if (e.target.id === 'chat') hideAll(); });
 document.querySelectorAll('#shop [data-tab]').forEach(b => { b.onclick = () => openShop(b.dataset.tab); });
 document.querySelectorAll('#quick [data-game]').forEach(b => { b.onclick = () => { $('quick').dataset.game = b.dataset.game; document.querySelectorAll('#quick [data-game]').forEach(x => x.classList.toggle('on', x === b)); }; });
-document.querySelectorAll('#quick [data-style]').forEach(b => { b.onclick = () => { $('quick').dataset.style = b.dataset.style; document.querySelectorAll('#quick [data-style]').forEach(x => x.classList.toggle('on', x === b)); }; });
 document.querySelectorAll('#quick [data-skill]').forEach(b => { b.onclick = () => startQuick('cpu', +b.dataset.skill); });
 $('btn2p').onclick = () => startQuick('2p', 0);
 $('btnResume').onclick = hideAll;
 $('btnRestart').onclick = () => {
   if (!G) return;
-  const o = Object.assign({}, G.opts); if (o.match) o.match = { raceTo: o.match.raceTo, score: [0, 0], career: o.match.career };
+  const o = Object.assign({}, G.opts); if (o.match) o.match = Object.assign({}, o.match, { score: [0, 0] });
   newGame(o); hideAll();
 };
 $('btnPauseSettings').onclick = () => openSettings('pause');
@@ -735,7 +726,7 @@ $('btnQuit').onclick = goMenu;
 window.__back = () => {
   if ($('menu').classList.contains('show')) return false;
   if (G && G.phase === 'replay') { endReplay(); return true; }
-  if (['quick', 'career', 'puzzles', 'shop', 'stats', 'over'].some(id => $(id).classList.contains('show'))) { goMenu(); return true; }
+  if (['quick', 'tour', 'bracket', 'locker', 'puzzles', 'shop', 'stats', 'over', 'vs', 'daily'].some(id => $(id).classList.contains('show'))) { goMenu(); return true; }
   if ($('settings').classList.contains('show')) { settingsBack === 'pause' ? show('pause') : goMenu(); return true; }
   if (overlayOpen()) { hideAll(); return true; }
   if (G && !G.demo) { openPause(); return true; }
@@ -754,4 +745,4 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 200));
 resize(); goMenu(); requestAnimationFrame(frame);
 
 // test hooks (harmless in production)
-window.__pool = { get G() { return G; }, newGame, shoot, endShot, startReplay, endReplay, aiPlan, step, stopped, newEv, simulate, PUZZLES, prof: () => prof, DT, playPuzzle, playCareer, startTutorial, unlock };
+window.__pool = { get G() { return G; }, newGame, shoot, endShot, startReplay, endReplay, aiPlan, step, stopped, newEv, simulate, PUZZLES, prof: () => prof, DT, playPuzzle, startTutorial, unlock, startTour, openBracket, tourMatchDone, react, say, addXP };

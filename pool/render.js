@@ -19,22 +19,23 @@ function resize() {
 const LAY_L = {
   dw: 2620, dh: 1460, menu: { x: 90, y: 90, r: 62 }, spin: { x: 2530, y: 90, r: 64 },
   panels: [{ x: 180, y: 22, w: 900, h: 136, left: true }, { x: 1540, y: 22, w: 900, h: 136, left: false }],
-  center: { x: 1310, y: 90, wide: true }, power: { x: 35, y: 180, w: 110, h: 1260 }, fine: { x: 2475, y: 180, w: 110, h: 1260 },
-  banner: { x: TX + W / 2, y: TY + 84, max: W - 100 }, lightC: { x: TX + W / 2, y: TY + H / 2 }, replayBtn: { x: TX + W - 300, y: TY + H - 120, w: 260, h: 80 },
+  center: { x: 1310, y: 90, wide: true }, power: { x: 35, y: 180, w: 110, h: 1260 }, fine: { x: 2475, y: 180, w: 110, h: 1100 },
+  banner: { x: TX + W / 2, y: TY + 84, max: W - 100 }, lightC: { x: TX + W / 2, y: TY + H / 2 }, replayBtn: { x: TX + W - 300, y: TY + H - 120, w: 260, h: 80 }, chat: { x: 2530, y: 1375, r: 58 },
   props: [['stool', -170, 1180, 0.3], ['table', -200, 470, 0], ['stool', 2800, 330, 1.2], ['table', 2810, 1090, 1], ['stool', 300, 1720, 2], ['stool', 2300, -260, 0.8]],
 };
 const LAY_P = {
   dw: 1300, dh: 2930, menu: { x: 86, y: 250, r: 54 }, spin: { x: 1214, y: 250, r: 58 },
   panels: [{ x: 20, y: 24, w: 620, h: 150, left: true }, { x: 660, y: 24, w: 620, h: 150, left: false }],
   center: { x: 650, y: 250, wide: false }, power: { x: 20, y: 2610, w: 1260, h: 120, horiz: true }, fine: { x: 20, y: 2765, w: 1260, h: 130, horiz: true },
-  banner: { x: 650, y: 410, max: 1160 }, lightC: { x: PCX, y: PCY }, replayBtn: { x: 990, y: 2470, w: 260, h: 80 },
+  banner: { x: 650, y: 410, max: 1160 }, lightC: { x: PCX, y: PCY }, replayBtn: { x: 990, y: 2470, w: 260, h: 80 }, chat: { x: 1080, y: 250, r: 50 },
   props: [['stool', -150, 700, 0.3], ['table', -170, 1900, 0], ['stool', 1450, 2250, 1.2], ['table', 1470, 900, 1], ['stool', 300, 3120, 2], ['stool', 1050, -150, 0.8]],
 };
 let LAY = LAY_L;
 // left-handed play: power on the right (landscape) or nearest the thumb (portrait)
 function applyHand() {
   const L = LAY_L, P = LAY_P;
-  const lx = 35, rx = 2475; L.power.x = lefty ? rx : lx; L.fine.x = lefty ? lx : rx;
+  const lx = 35, rx = 2475; L.power.x = lefty ? rx : lx; L.fine.x = lefty ? lx : rx; L.chat.x = L.fine.x + 55;
+  L.power.y = 180; L.power.h = 1260;
   P.power.y = lefty ? 2765 : 2610; P.power.h = lefty ? 130 : 120; P.fine.y = lefty ? 2610 : 2765; P.fine.h = lefty ? 120 : 130;
 }
 function tableXform(c) { if (PORT) { c.translate(PCX, PCY); c.rotate(-Math.PI / 2); c.translate(-W / 2, -H / 2); } else c.translate(TX, TY); }
@@ -482,6 +483,32 @@ function statusText() {
   if (!G.groups[0]) return 'Open table';
   return G.match ? `Race to ${G.match.raceTo}` : '8-Ball';
 }
+function wrapText(c, text, maxW) {
+  const words = text.split(' '), lines = []; let cur = '';
+  for (const w of words) { const tst = cur ? cur + ' ' + w : w; if (c.measureText(tst).width > maxW && cur) { lines.push(cur); cur = w; } else cur = tst; }
+  if (cur) lines.push(cur); return lines;
+}
+// speech bubbles hang below the speaker's panel with a tail pointing at their face
+function drawBubbles(c) {
+  if (G.solo) return;
+  for (const b of G.talk) {
+    const P = LAY.panels[b.who], a = Math.min(1, b.t * 6, (b.dur - b.t) * 3); if (a <= 0) continue;
+    const pop = b.t < 0.15 ? 0.85 + b.t : 1;
+    c.save(); c.globalAlpha = a; c.font = 'bold 36px system-ui, sans-serif';
+    const lines = wrapText(c, b.text, PORT ? 520 : 700), w = Math.max(...lines.map(l => c.measureText(l).width)) + 56, h = lines.length * 44 + 32;
+    const ax = P.left ? P.x + P.h * 0.5 : P.x + P.w - P.h * 0.5, top = PORT ? 330 : P.y + P.h + 26;
+    let x = P.left ? P.x + 10 : P.x + P.w - 10 - w;
+    c.translate(ax, top); c.scale(pop, pop); c.translate(-ax, -top);
+    c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = 20 * scale; c.shadowOffsetY = 6 * scale;
+    c.fillStyle = b.who === 0 ? '#e8f4ff' : '#fffaf0';
+    rr(c, x, top, w, h, 26); c.fill();
+    c.beginPath(); c.moveTo(ax - 16, top + 2); c.lineTo(ax, top - (PORT ? 40 : 22)); c.lineTo(ax + 16, top + 2); c.closePath(); c.fill();
+    c.shadowColor = 'transparent';
+    c.fillStyle = '#1d140f'; c.textAlign = 'left'; c.textBaseline = 'top';
+    lines.forEach((l, k) => c.fillText(l, x + 28, top + 18 + k * 44));
+    c.restore();
+  }
+}
 function drawHUD(c, t) {
   const mb = LAY.menu, sb = LAY.spin;
   rr(c, mb.x - mb.r, mb.y - mb.r, mb.r * 2, mb.r * 2, mb.r * 0.42);
@@ -499,10 +526,22 @@ function drawHUD(c, t) {
     if (active) { c.strokeStyle = `rgba(240,190,90,${0.65 + 0.35 * Math.sin(t * 5)})`; c.lineWidth = 5; c.stroke(); }
     else { c.strokeStyle = 'rgba(217,164,65,0.22)'; c.lineWidth = 3; c.stroke(); }
     const ar = P.h * 0.38, ax = P.left ? P.x + P.h * 0.5 : P.x + P.w - P.h * 0.5, ay = P.y + P.h / 2;
-    c.fillStyle = p.color || (i ? '#b83280' : '#2b6cb0'); c.beginPath(); c.arc(ax, ay, ar, 0, TAU); c.fill();
-    c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke();
-    c.fillStyle = '#fff'; c.font = `bold ${ar}px system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillText(p.avatar || (p.cpu ? '🤖' : p.name[0]), ax, ay + 3);
+    if (p.look) {
+      const ex = G.exprT[i] > 0 ? G.expr[i] : 'neutral', talking = G.talk.some(b => b.who === i && b.t < b.dur * 0.55);
+      drawFace(c, p.look, ax, ay, ar, ex, talking, t + i * 3);
+      c.strokeStyle = active ? '#f0be5a' : 'rgba(255,255,255,0.75)'; c.lineWidth = 4; c.beginPath(); c.arc(ax, ay, ar, 0, TAU); c.stroke();
+      if (p.level) {
+        c.font = `bold ${P.h * 0.15}px system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+        const lw = c.measureText('Lv ' + p.level).width + 18;
+        rr(c, ax - lw / 2, ay + ar - 12, lw, P.h * 0.2, 10); c.fillStyle = '#e8b64c'; c.fill();
+        c.fillStyle = '#2a1700'; c.fillText('Lv ' + p.level, ax, ay + ar - 12 + P.h * 0.1);
+      }
+    } else {
+      c.fillStyle = p.color || (i ? '#b83280' : '#2b6cb0'); c.beginPath(); c.arc(ax, ay, ar, 0, TAU); c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = 4; c.stroke();
+      c.fillStyle = '#fff'; c.font = `bold ${ar}px system-ui, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(p.avatar || (p.cpu ? '🤖' : p.name[0]), ax, ay + 3);
+    }
     if (active && G.clock && human() && G.phase === 'aim') {        // shot clock ring
       const f = Math.max(0, G.clockLeft / G.clock);
       c.strokeStyle = f > 0.5 ? '#3ddc84' : f > 0.25 ? '#ffd64f' : '#ff4d4d'; c.lineWidth = 8;
@@ -510,7 +549,7 @@ function drawHUD(c, t) {
     }
     const nx = P.left ? ax + ar + 24 : ax - ar - 24;
     c.font = `bold ${P.h * 0.3}px system-ui, sans-serif`; c.textAlign = P.left ? 'left' : 'right'; c.textBaseline = 'alphabetic';
-    c.fillText(p.name, nx, P.y + P.h * 0.38, P.w - P.h - 40);
+    c.fillStyle = '#fff'; c.fillText(p.name, nx, P.y + P.h * 0.38, P.w - P.h - 40);
     const grp = G.groups[i];
     let nums = grp === 'solids' ? [1, 2, 3, 4, 5, 6, 7] : grp === 'stripes' ? [9, 10, 11, 12, 13, 14, 15] : [];
     let slots = 8;
@@ -630,6 +669,7 @@ function render(t) {
   // effects: chalk dust, pocket flashes
   for (const f of G.fx) {
     const k = f.t / f.life;
+    if (f.conf) { c.save(); c.translate(f.x, f.y); c.rotate(f.t * f.spin); c.globalAlpha = Math.min(1, (f.life - f.t) * 2); c.fillStyle = f.col; c.fillRect(-9, -5, 18, 10); c.restore(); continue; }
     if (f.ring) { c.strokeStyle = `rgba(255,214,120,${0.7 * (1 - k)})`; c.lineWidth = 6 * (1 - k) + 1; c.beginPath(); c.arc(f.x, f.y, 30 + 70 * k, 0, TAU); c.stroke(); }
     else { c.fillStyle = `rgba(120,170,255,${0.55 * (1 - k)})`; c.beginPath(); c.arc(f.x, f.y, f.r * (1 + k), 0, TAU); c.fill(); }
   }
@@ -666,6 +706,15 @@ function render(t) {
     c.fillStyle = '#e8b64c'; c.font = 'bold 34px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText('↺ Replay', Rb.x + Rb.w / 2, Rb.y + Rb.h / 2 + 2);
   }
+  // quick chat button (vs computer)
+  if (G.vs === 'cpu' && !G.demo && !G.over) {
+    const Q = LAY.chat; c.fillStyle = 'rgba(12,8,6,0.8)'; c.beginPath(); c.arc(Q.x, Q.y, Q.r, 0, TAU); c.fill();
+    c.strokeStyle = 'rgba(217,164,65,0.6)'; c.lineWidth = 3; c.stroke();
+    c.fillStyle = '#f6efe4'; rr(c, Q.x - Q.r * 0.5, Q.y - Q.r * 0.38, Q.r, Q.r * 0.62, 12); c.fill();
+    c.beginPath(); c.moveTo(Q.x - Q.r * 0.2, Q.y + Q.r * 0.22); c.lineTo(Q.x - Q.r * 0.36, Q.y + Q.r * 0.48); c.lineTo(Q.x, Q.y + Q.r * 0.22); c.fill();
+    c.fillStyle = '#3a2a20'; for (let k = -1; k <= 1; k++) { c.beginPath(); c.arc(Q.x + k * Q.r * 0.24, Q.y - Q.r * 0.07, Q.r * 0.07, 0, TAU); c.fill(); }
+  }
+  drawBubbles(c);
   // message banner (screen-aligned, so it reads upright in both orientations)
   if (G.msg) {
     const m = G.msg, a = Math.min(1, m.t * 5, (m.dur - m.t) * 3), B = LAY.banner;
